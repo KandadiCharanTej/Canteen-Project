@@ -32,6 +32,7 @@ class MenuItemBase(BaseModel):
     price: float
     veg_flag: bool = True
     available_quantity: int = 0
+    image_url: Optional[str] = None
     is_active: bool = True
 
 class MenuItemCreate(MenuItemBase):
@@ -76,6 +77,7 @@ class OrderOut(BaseModel):
     total_price: float
     status: str
     time_slot: str
+    otp: Optional[str] = None
     created_at: datetime.datetime
     items: List[OrderItemOut]
     class Config:

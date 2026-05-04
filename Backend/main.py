@@ -8,6 +8,7 @@ from typing import List
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+import random
 
 # Setup database
 models.Base.metadata.create_all(bind=database.engine)
@@ -126,7 +127,10 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db), user
 
         slot.current_orders += 1
         
-        db_order = models.Order(user_id=user.id, total_price=total_price, time_slot=order.time_slot)
+        # Generate a 4-digit OTP
+        otp_code = str(random.randint(1000, 9999))
+        
+        db_order = models.Order(user_id=user.id, total_price=total_price, time_slot=order.time_slot, otp=otp_code)
         db.add(db_order)
         db.flush() # Flush to assign db_order.id without committing transaction
         
@@ -164,10 +168,16 @@ def update_order_status(order_id: int, status_update: schemas.OrderUpdateStatus,
     return order
 
 # Serve static frontend
-frontend_build_path = os.path.join(os.path.dirname(__file__), "..", "Frontend", "dist")
+frontend_build_path = os.path.join(os.path.dirname(__file__), "static")
 
 if os.path.isdir(os.path.join(frontend_build_path, "assets")):
     app.mount("/assets", StaticFiles(directory=os.path.join(frontend_build_path, "assets")), name="assets")
+if os.path.isdir(os.path.join(frontend_build_path, "images")):
+    app.mount("/images", StaticFiles(directory=os.path.join(frontend_build_path, "images")), name="images")
+if os.path.isdir(os.path.join(frontend_build_path, "css")):
+    app.mount("/css", StaticFiles(directory=os.path.join(frontend_build_path, "css")), name="css")
+if os.path.isdir(os.path.join(frontend_build_path, "js")):
+    app.mount("/js", StaticFiles(directory=os.path.join(frontend_build_path, "js")), name="js")
 
 @app.get("/{full_path:path}")
 def serve_spa(full_path: str):

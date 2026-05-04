@@ -21,6 +21,7 @@ class Menu(Base):
     price = Column(Float)
     veg_flag = Column(Boolean, default=True)
     available_quantity = Column(Integer, default=0)
+    image_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     date = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -40,6 +41,7 @@ class Order(Base):
     total_price = Column(Float)
     status = Column(String, default="Placed", index=True) # Placed, Preparing, Ready, Collected
     time_slot = Column(String, index=True)
+    otp = Column(String) # 4-6 digit OTP
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     items = relationship("OrderItem", back_populates="order")
