@@ -6,14 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { BottomNav } from "@/components/BottomNav";
-import Home from "./pages/Home";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import Orders from "./pages/Orders";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+import Home from "@/pages/Home";
+import Cart from "@/pages/Cart";
+import Checkout from "@/pages/Checkout";
+import Orders from "@/pages/Orders";
+import Profile from "@/pages/Profile";
+import Admin from "@/pages/Admin";
+import Login from "@/pages/Login";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
