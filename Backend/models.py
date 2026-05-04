@@ -38,8 +38,8 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     total_price = Column(Float)
-    status = Column(String, default="Placed") # Placed, Preparing, Ready, Collected
-    time_slot = Column(String)
+    status = Column(String, default="Placed", index=True) # Placed, Preparing, Ready, Collected
+    time_slot = Column(String, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     items = relationship("OrderItem", back_populates="order")

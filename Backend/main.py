@@ -97,35 +97,53 @@ def get_slots(db: Session = Depends(get_db)):
 
 @app.post("/orders", response_model=schemas.OrderOut)
 def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    # Validate slot
-    slot = db.query(models.TimeSlot).filter(models.TimeSlot.slot_time == order.time_slot).first()
-    if not slot or slot.current_orders >= slot.max_orders:
-        raise HTTPException(status_code=400, detail="Slot full or invalid")
-    
-    total_price = 0
-    order_items = []
-    for item_data in order.items:
-        menu_item = db.query(models.Menu).filter(models.Menu.id == item_data.item_id).first()
-        if not menu_item or menu_item.available_quantity < item_data.quantity:
-            raise HTTPException(status_code=400, detail=f"Item {menu_item.name if menu_item else item_data.item_id} out of stock")
-        menu_item.available_quantity -= item_data.quantity
-        total_price += menu_item.price * item_data.quantity
-        order_items.append(models.OrderItem(item_id=menu_item.id, quantity=item_data.quantity, price_at_time=menu_item.price))
+    try:
+        # Validate slot with lock
+        slot = db.query(models.TimeSlot).filter(models.TimeSlot.slot_time == order.time_slot).with_for_update().first()
+        if not slot:
+            raise HTTPException(status_code=400, detail="Invalid slot")
+        if slot.current_orders >= slot.max_orders:
+            raise HTTPException(status_code=400, detail="Slot is full")
+        
+        total_price = 0
+        order_items = []
+        
+        # Pre-fetch and lock menu items
+        item_ids = [item_data.item_id for item_data in order.items]
+        menu_items = db.query(models.Menu).filter(models.Menu.id.in_(item_ids)).with_for_update().all()
+        menu_item_dict = {item.id: item for item in menu_items}
 
-    slot.current_orders += 1
-    
-    db_order = models.Order(user_id=user.id, total_price=total_price, time_slot=order.time_slot)
-    db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
-    
-    for oi in order_items:
-        oi.order_id = db_order.id
-        db.add(oi)
-    db.commit()
-    db.refresh(db_order)
-    
-    return db_order
+        for item_data in order.items:
+            menu_item = menu_item_dict.get(item_data.item_id)
+            if not menu_item:
+                raise HTTPException(status_code=400, detail=f"Item {item_data.item_id} not found")
+            if menu_item.available_quantity < item_data.quantity:
+                raise HTTPException(status_code=400, detail=f"Item '{menu_item.name}' is out of stock")
+            
+            menu_item.available_quantity -= item_data.quantity
+            total_price += menu_item.price * item_data.quantity
+            order_items.append(models.OrderItem(item_id=menu_item.id, quantity=item_data.quantity, price_at_time=menu_item.price))
+
+        slot.current_orders += 1
+        
+        db_order = models.Order(user_id=user.id, total_price=total_price, time_slot=order.time_slot)
+        db.add(db_order)
+        db.flush() # Flush to assign db_order.id without committing transaction
+        
+        for oi in order_items:
+            oi.order_id = db_order.id
+            db.add(oi)
+            
+        db.commit()
+        db.refresh(db_order)
+        return db_order
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An error occurred while placing the order")
 
 @app.get("/orders", response_model=List[schemas.OrderOut])
 def get_orders(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):

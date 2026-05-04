@@ -37,7 +37,19 @@ export default function Admin() {
     setOrders(await api.getOrders());
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(refresh, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Group orders by time slot
+  const groupedOrders = orders.reduce((acc, order) => {
+    acc[order.slotLabel] = acc[order.slotLabel] || [];
+    acc[order.slotLabel].push(order);
+    return acc;
+  }, {} as Record<string, Order[]>);
+
 
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
@@ -164,35 +176,45 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <div className="space-y-3">
+            <div className="space-y-6">
               {orders.length === 0 && <p className="text-center text-muted-foreground py-12">No orders yet</p>}
-              {orders.map((o) => (
-                <div key={o.id} className="bg-card rounded-2xl shadow-soft border border-border/50 p-4">
-                  <div className="flex justify-between items-start gap-3 mb-2">
-                    <div>
-                      <p className="font-semibold">{o.id} · {o.userName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(o.createdAt).toLocaleString()} · Pickup {o.slotLabel} · {o.paymentMethod}
-                      </p>
+              
+              {Object.entries(groupedOrders).map(([slot, slotOrders]) => (
+                <div key={slot} className="space-y-3">
+                  <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
+                    <h3 className="font-bold text-lg">{slot} ({slotOrders.length} orders)</h3>
+                  </div>
+                  
+                  {slotOrders.map((o) => (
+                    <div key={o.id} className="bg-card rounded-2xl shadow-soft border border-border/50 p-4">
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div>
+                          <p className="font-semibold">{o.id} · {o.userName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(o.createdAt).toLocaleString()} · {o.paymentMethod}
+                          </p>
+                        </div>
+                        <StatusBadge status={o.status} />
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-3">
+                        {o.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}
+                      </div>
+                      <div className="flex items-center justify-between gap-3 mt-4">
+                        <span className="font-semibold">₹{o.total}</span>
+                        <div className="flex gap-2">
+                          {o.status === "Placed" && (
+                            <Button size="sm" onClick={() => updateStatus(o.id, "Preparing")}>Prep</Button>
+                          )}
+                          {o.status === "Preparing" && (
+                            <Button size="sm" variant="default" onClick={() => updateStatus(o.id, "Ready")}>Ready</Button>
+                          )}
+                          {o.status === "Ready" && (
+                            <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "Completed")}>Done</Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <StatusBadge status={o.status} />
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-3">
-                    {o.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold">₹{o.total}</span>
-                    <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v as OrderStatus)}>
-                      <SelectTrigger className="w-44 rounded-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  ))}
                 </div>
               ))}
             </div>
