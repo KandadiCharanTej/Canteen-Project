@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, ClipboardList, Settings } from "lucide-react";
+import { Home, ShoppingBag, ClipboardList, UserCircle, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -12,15 +12,23 @@ export function BottomNav() {
   if (location.pathname === "/login") return null;
 
   const items = [
-    { to: "/", label: "Menu", icon: Home },
+    { to: "/", label: "Home", icon: Home },
     { to: "/cart", label: "Cart", icon: ShoppingBag, badge: count },
     { to: "/orders", label: "Orders", icon: ClipboardList },
-    ...(user?.role === "admin" ? [{ to: "/admin", label: "Admin", icon: Settings }] : []),
+    { to: "/profile", label: "Profile", icon: UserCircle },
+    ...(user?.role === "admin"
+      ? [{ to: "/admin", label: "Admin", icon: Settings }]
+      : []),
   ];
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border shadow-card">
-      <div className="max-w-2xl mx-auto grid grid-cols-4 gap-1 px-2 py-2 safe-area-inset-bottom">
+      <div
+        className={cn(
+          "max-w-2xl mx-auto grid gap-1 px-2 py-2 safe-area-inset-bottom",
+          user?.role === "admin" ? "grid-cols-5" : "grid-cols-4"
+        )}
+      >
         {items.map((it) => (
           <NavLink
             key={it.to}
@@ -28,8 +36,10 @@ export function BottomNav() {
             end={it.to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-xs font-medium transition-colors relative",
-                isActive ? "text-primary bg-accent" : "text-muted-foreground hover:text-foreground"
+                "flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl text-xs font-medium transition-colors relative",
+                isActive
+                  ? "text-primary bg-accent"
+                  : "text-muted-foreground hover:text-foreground"
               )
             }
           >

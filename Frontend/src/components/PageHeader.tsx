@@ -15,12 +15,22 @@ export function PageHeader({ title, showBack, showLogout, right }: Props) {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-background/85 backdrop-blur border-b border-border">
       <div className="max-w-2xl mx-auto flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-2">
           {showBack && (
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              aria-label="Back"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
@@ -29,7 +39,12 @@ export function PageHeader({ title, showBack, showLogout, right }: Props) {
         <div className="flex items-center gap-1">
           {right}
           {showLogout && (
-            <Button variant="ghost" size="icon" onClick={logout} aria-label="Logout">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              aria-label="Logout"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           )}

@@ -1,129 +1,173 @@
-// Centralized API service. Swap implementations with real fetch() calls.
-import { MenuItem, Order, TimeSlot, User } from "./types";
+import axios from "axios";
+import type {
+  AuthResponse,
+  MenuItem,
+  Order,
+  OrderStatus,
+  Profile,
+  TimeSlot,
+  User,
+} from "./types";
 
-const LS = {
-  user: "canteen_user",
-  orders: "canteen_orders",
-  menu: "canteen_menu",
+// ─────────── Axios Instance ───────────
+const http = axios.create({
+  baseURL: "/api",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Auto-attach JWT token to every request
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem("canteen_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Auto-logout on 401
+http.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("canteen_token");
+      localStorage.removeItem("canteen_user");
+      // Don't redirect - let the UI handle showing login when needed
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ─────────── Auth API ───────────
+export const authApi = {
+  async signup(data: {
+    name: string;
+    contact: string;
+    password: string;
+    category?: string;
+    student_class?: string;
+  }): Promise<AuthResponse> {
+    const res = await http.post<AuthResponse>("/signup", data);
+    localStorage.setItem("canteen_token", res.data.access_token);
+    localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
+    return res.data;
+  },
+
+  async login(contact: string, password: string): Promise<AuthResponse> {
+    const res = await http.post<AuthResponse>("/login", { contact, password });
+    localStorage.setItem("canteen_token", res.data.access_token);
+    localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
+    return res.data;
+  },
+
+  async getMe(): Promise<User> {
+    const res = await http.get<User>("/me");
+    localStorage.setItem("canteen_user", JSON.stringify(res.data));
+    return res.data;
+  },
+
+  async getProfile(): Promise<Profile> {
+    const res = await http.get<Profile>("/profile");
+    return res.data;
+  },
+
+  getStoredUser(): User | null {
+    try {
+      const raw = localStorage.getItem("canteen_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  getToken(): string | null {
+    return localStorage.getItem("canteen_token");
+  },
+
+  isLoggedIn(): boolean {
+    return !!localStorage.getItem("canteen_token");
+  },
+
+  logout() {
+    localStorage.removeItem("canteen_token");
+    localStorage.removeItem("canteen_user");
+  },
 };
 
-// --- Seed data (replace with API) ---
-const seedMenu: MenuItem[] = [
-  { id: "1", name: "Veg Sandwich", price: 40, category: "Snacks", stock: 12, active: true, emoji: "🥪" },
-  { id: "2", name: "Masala Dosa", price: 70, category: "South Indian", stock: 5, active: true, emoji: "🥞" },
-  { id: "3", name: "Paneer Roll", price: 90, category: "Snacks", stock: 0, active: true, emoji: "🌯" },
-  { id: "4", name: "Veg Biryani", price: 120, category: "Meals", stock: 20, active: true, emoji: "🍛" },
-  { id: "5", name: "Cold Coffee", price: 60, category: "Beverages", stock: 30, active: true, emoji: "🥤" },
-  { id: "6", name: "Samosa (2 pcs)", price: 30, category: "Snacks", stock: 50, active: true, emoji: "🥟" },
-  { id: "7", name: "Chole Bhature", price: 90, category: "Meals", stock: 8, active: true, emoji: "🍲" },
-  { id: "8", name: "Masala Chai", price: 20, category: "Beverages", stock: 100, active: true, emoji: "☕" },
-  { id: "9", name: "Pasta Alfredo", price: 110, category: "Meals", stock: 6, active: true, emoji: "🍝" },
-  { id: "10", name: "Chocolate Brownie", price: 55, category: "Desserts", stock: 4, active: true, emoji: "🍫" },
-];
-
-const seedSlots: TimeSlot[] = [
-  { id: "s1", label: "12:30 PM", capacity: 30, booked: 12 },
-  { id: "s2", label: "1:00 PM", capacity: 30, booked: 28 },
-  { id: "s3", label: "1:30 PM", capacity: 30, booked: 30 },
-  { id: "s4", label: "2:00 PM", capacity: 30, booked: 5 },
-  { id: "s5", label: "4:30 PM", capacity: 20, booked: 8 },
-  { id: "s6", label: "5:00 PM", capacity: 20, booked: 0 },
-];
-
-function delay<T>(value: T, ms = 300): Promise<T> {
-  return new Promise((res) => setTimeout(() => res(value), ms));
-}
-
-function readMenu(): MenuItem[] {
-  const raw = localStorage.getItem(LS.menu);
-  if (!raw) {
-    localStorage.setItem(LS.menu, JSON.stringify(seedMenu));
-    return seedMenu;
-  }
-  return JSON.parse(raw);
-}
-
-function writeMenu(menu: MenuItem[]) {
-  localStorage.setItem(LS.menu, JSON.stringify(menu));
-}
-
-function readOrders(): Order[] {
-  const raw = localStorage.getItem(LS.orders);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function writeOrders(orders: Order[]) {
-  localStorage.setItem(LS.orders, JSON.stringify(orders));
-}
-
-export const api = {
-  // Auth
-  async login(payload: { name: string; contact: string }): Promise<User> {
-    const user: User = {
-      id: crypto.randomUUID(),
-      name: payload.name,
-      contact: payload.contact,
-      role: payload.contact === "admin@canteen" ? "admin" : "user",
-    };
-    localStorage.setItem(LS.user, JSON.stringify(user));
-    return delay(user, 200);
-  },
-  getUser(): User | null {
-    const raw = localStorage.getItem(LS.user);
-    return raw ? JSON.parse(raw) : null;
-  },
-  logout() {
-    localStorage.removeItem(LS.user);
-  },
-
-  // Menu
+// ─────────── Menu API ───────────
+export const menuApi = {
   async getMenu(): Promise<MenuItem[]> {
-    return delay(readMenu().filter((m) => m.active));
+    const res = await http.get<MenuItem[]>("/menu");
+    return res.data;
   },
+
   async getAllMenu(): Promise<MenuItem[]> {
-    return delay(readMenu());
-  },
-  async upsertMenuItem(item: MenuItem): Promise<MenuItem> {
-    const menu = readMenu();
-    const idx = menu.findIndex((m) => m.id === item.id);
-    if (idx >= 0) menu[idx] = item;
-    else menu.push({ ...item, id: crypto.randomUUID() });
-    writeMenu(menu);
-    return delay(item, 150);
-  },
-  async deleteMenuItem(id: string): Promise<void> {
-    writeMenu(readMenu().filter((m) => m.id !== id));
-    return delay(undefined, 150);
+    const res = await http.get<MenuItem[]>("/menu/all");
+    return res.data;
   },
 
-  // Slots
+  async createItem(item: Omit<MenuItem, "id" | "date">): Promise<MenuItem> {
+    const res = await http.post<MenuItem>("/menu", item);
+    return res.data;
+  },
+
+  async updateItem(
+    id: number,
+    data: Partial<MenuItem>
+  ): Promise<MenuItem> {
+    const res = await http.put<MenuItem>(`/menu/${id}`, data);
+    return res.data;
+  },
+
+  async deleteItem(id: number): Promise<void> {
+    await http.delete(`/menu/${id}`);
+  },
+};
+
+// ─────────── Slots API ───────────
+export const slotsApi = {
   async getSlots(): Promise<TimeSlot[]> {
-    return delay(seedSlots);
+    const res = await http.get<TimeSlot[]>("/slots");
+    return res.data;
+  },
+};
+
+// ─────────── Orders API ───────────
+export const ordersApi = {
+  async createOrder(data: {
+    time_slot: string;
+    items: { item_id: number; quantity: number }[];
+  }): Promise<Order> {
+    const res = await http.post<Order>("/orders", data);
+    return res.data;
   },
 
-  // Orders
-  async createOrder(order: Omit<Order, "id" | "createdAt" | "status">): Promise<Order> {
-    const newOrder: Order = {
-      ...order,
-      id: "ORD-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
-      createdAt: new Date().toISOString(),
-      status: "Placed",
-    };
-    const orders = readOrders();
-    orders.unshift(newOrder);
-    writeOrders(orders);
-    return delay(newOrder, 400);
+  async getOrders(): Promise<Order[]> {
+    const res = await http.get<Order[]>("/orders");
+    return res.data;
   },
-  async getOrders(userId?: string): Promise<Order[]> {
-    const all = readOrders();
-    return delay(userId ? all.filter((o) => o.userId === userId) : all);
+
+  async updateStatus(orderId: number, status: OrderStatus): Promise<Order> {
+    const res = await http.put<Order>(`/orders/${orderId}/status`, { status });
+    return res.data;
   },
-  async updateOrderStatus(id: string, status: Order["status"]): Promise<Order | null> {
-    const orders = readOrders();
-    const idx = orders.findIndex((o) => o.id === id);
-    if (idx < 0) return null;
-    orders[idx].status = status;
-    writeOrders(orders);
-    return delay(orders[idx], 150);
+
+  async updatePayment(
+    orderId: number,
+    payment_status: string,
+    upi_ref?: string
+  ): Promise<Order> {
+    const res = await http.put<Order>(`/orders/${orderId}/payment`, {
+      payment_status,
+      upi_ref,
+    });
+    return res.data;
+  },
+
+  async markSelfPaid(orderId: number): Promise<void> {
+    await http.post(`/orders/${orderId}/mark-paid`);
+  },
+
+  async verifyOTP(orderId: number, otp: string): Promise<void> {
+    await http.post("/orders/verify-otp", { order_id: orderId, otp });
   },
 };

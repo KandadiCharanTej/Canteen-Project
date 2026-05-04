@@ -10,5 +10,14 @@ const map: Record<OrderStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
-  return <Badge className={cn("rounded-full font-medium hover:opacity-100", map[status])}>{status}</Badge>;
+  return (
+    <Badge
+      className={cn(
+        "rounded-full font-medium hover:opacity-100",
+        map[status] || "bg-muted text-muted-foreground"
+      )}
+    >
+      {status}
+    </Badge>
+  );
 }

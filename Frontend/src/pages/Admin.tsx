@@ -1,220 +1,517 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
-import { api } from "@/lib/api";
+import { menuApi, ordersApi } from "@/lib/api";
 import { MenuItem, Order, OrderStatus } from "@/lib/types";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-const blank: MenuItem = { id: "", name: "", price: 0, category: "Snacks", stock: 0, active: true, emoji: "🍽️" };
-const STATUSES: OrderStatus[] = ["Placed", "Preparing", "Ready", "Completed"];
+const blank: Partial<MenuItem> = {
+  name: "",
+  price: 0,
+  category: "Snacks",
+  available_quantity: 0,
+  is_active: true,
+  veg_flag: true,
+  is_best: false,
+  image_url: "",
+  description: "",
+};
 
 export default function Admin() {
   const { user } = useAuth();
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [editing, setEditing] = useState<MenuItem | null>(null);
+  const [editing, setEditing] = useState<Partial<MenuItem> | null>(null);
   const [open, setOpen] = useState(false);
+  const [otpInputs, setOtpInputs] = useState<Record<number, string>>({});
+  const [saving, setSaving] = useState(false);
 
-  const refresh = async () => {
-    setMenu(await api.getAllMenu());
-    setOrders(await api.getOrders());
-  };
+  const refresh = useCallback(async () => {
+    try {
+      const [m, o] = await Promise.all([
+        menuApi.getAllMenu(),
+        ordersApi.getOrders(),
+      ]);
+      setMenu(m);
+      setOrders(o);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     refresh();
     const interval = setInterval(refresh, 5000); // Poll every 5 seconds
     return () => clearInterval(interval);
-  }, []);
-
-  // Group orders by time slot
-  const groupedOrders = orders.reduce((acc, order) => {
-    acc[order.slotLabel] = acc[order.slotLabel] || [];
-    acc[order.slotLabel].push(order);
-    return acc;
-  }, {} as Record<string, Order[]>);
-
+  }, [refresh]);
 
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
+  // Group orders by time slot
+  const groupedOrders = orders.reduce(
+    (acc, order) => {
+      acc[order.time_slot] = acc[order.time_slot] || [];
+      acc[order.time_slot].push(order);
+      return acc;
+    },
+    {} as Record<string, Order[]>
+  );
+
   const save = async () => {
     if (!editing) return;
-    if (!editing.name.trim()) return toast.error("Name required");
-    await api.upsertMenuItem(editing);
-    toast.success("Item saved");
-    setOpen(false);
-    setEditing(null);
-    refresh();
+    if (!editing.name?.trim()) return toast.error("Name required");
+    setSaving(true);
+    try {
+      if (editing.id) {
+        await menuApi.updateItem(editing.id, editing);
+      } else {
+        await menuApi.createItem(editing as any);
+      }
+      toast.success("Item saved");
+      setOpen(false);
+      setEditing(null);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (item: MenuItem) => {
-    await api.upsertMenuItem({ ...item, active: !item.active });
+    await menuApi.updateItem(item.id, { is_active: !item.is_active });
     refresh();
   };
 
-  const remove = async (id: string) => {
-    await api.deleteMenuItem(id);
+  const remove = async (id: number) => {
+    if (!confirm("Delete this item?")) return;
+    await menuApi.deleteItem(id);
     toast.success("Item deleted");
     refresh();
   };
 
-  const updateStatus = async (id: string, status: OrderStatus) => {
-    await api.updateOrderStatus(id, status);
-    refresh();
+  const updateStatus = async (id: number, status: OrderStatus) => {
+    try {
+      await ordersApi.updateStatus(id, status);
+      toast.success(`Order updated to ${status}`);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update");
+    }
+  };
+
+  const markPaid = async (id: number) => {
+    try {
+      await ordersApi.updatePayment(id, "paid");
+      toast.success("Marked as paid");
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update");
+    }
+  };
+
+  const verifyOTP = async (orderId: number) => {
+    const otp = otpInputs[orderId];
+    if (!otp || otp.length !== 4) {
+      toast.error("Enter 4-digit OTP");
+      return;
+    }
+    try {
+      await ordersApi.verifyOTP(orderId, otp);
+      toast.success("OTP verified! Order completed.");
+      setOtpInputs((prev) => {
+        const n = { ...prev };
+        delete n[orderId];
+        return n;
+      });
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Invalid OTP");
+    }
   };
 
   return (
     <>
       <PageHeader title="Admin Dashboard" showLogout />
       <div className="max-w-4xl mx-auto px-4 py-4 safe-bottom">
-        <Tabs defaultValue="menu">
+        <Tabs defaultValue="orders">
           <TabsList className="grid grid-cols-2 w-full mb-4">
-            <TabsTrigger value="menu">Menu Items</TabsTrigger>
-            <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
+            <TabsTrigger value="orders" className="text-base">
+              Orders ({orders.length})
+            </TabsTrigger>
+            <TabsTrigger value="menu" className="text-base">
+              Menu ({menu.length})
+            </TabsTrigger>
           </TabsList>
 
+          {/* ─── ORDERS TAB ─── */}
+          <TabsContent value="orders">
+            <div className="space-y-6">
+              {orders.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">
+                  No orders yet
+                </p>
+              )}
+
+              {Object.entries(groupedOrders).map(([slot, slotOrders]) => (
+                <div key={slot} className="space-y-3">
+                  <div className="flex justify-between items-center bg-accent/60 p-3 rounded-xl">
+                    <h3 className="font-bold text-base">
+                      ⏰ {slot} ({slotOrders.length} orders)
+                    </h3>
+                  </div>
+
+                  {slotOrders.map((o) => (
+                    <div
+                      key={o.id}
+                      className="bg-card rounded-2xl shadow-soft border border-border/50 p-4"
+                    >
+                      {/* Order Header */}
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div>
+                          <p className="font-bold text-base">
+                            #{o.id} · {o.user_name || "Unknown"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {o.user_contact} ·{" "}
+                            {new Date(o.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <StatusBadge status={o.status} />
+                          <Badge
+                            className={cn(
+                              "text-[10px]",
+                              o.payment_status === "paid"
+                                ? "bg-success/15 text-success"
+                                : "bg-warning/15 text-warning-foreground"
+                            )}
+                          >
+                            {o.payment_status === "paid"
+                              ? "Paid"
+                              : "Pending"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Items */}
+                      <div className="text-sm text-muted-foreground mb-3 bg-muted/30 rounded-lg p-2.5">
+                        {o.items.map((i) => (
+                          <div key={i.id} className="flex justify-between">
+                            <span>
+                              {i.item?.name || `Item #${i.item_id}`} ×{" "}
+                              {i.quantity}
+                            </span>
+                            <span className="font-medium">
+                              ₹{i.price_at_time * i.quantity}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="border-t border-border mt-1.5 pt-1.5 flex justify-between font-semibold text-foreground">
+                          <span>Total</span>
+                          <span>₹{o.total_price}</span>
+                        </div>
+                      </div>
+
+                      {/* OTP Display (admin sees it) */}
+                      {o.otp && o.status !== "Completed" && (
+                        <div className="bg-accent/50 rounded-xl p-2.5 mb-3 flex items-center gap-2">
+                          <KeyRound className="h-4 w-4 text-primary" />
+                          <span className="text-sm">
+                            OTP:{" "}
+                            <strong className="tracking-widest text-primary">
+                              {o.otp}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Action Buttons - BIG + SIMPLE */}
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {o.payment_status !== "paid" && (
+                          <Button
+                            size="lg"
+                            onClick={() => markPaid(o.id)}
+                            className="flex-1 min-w-[120px] h-11 rounded-xl bg-success hover:bg-success/90 text-success-foreground font-bold text-sm"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1.5" />
+                            Mark Paid
+                          </Button>
+                        )}
+
+                        {o.status === "Placed" && (
+                          <Button
+                            size="lg"
+                            onClick={() => updateStatus(o.id, "Preparing")}
+                            className="flex-1 min-w-[120px] h-11 rounded-xl bg-warning hover:bg-warning/90 text-warning-foreground font-bold text-sm"
+                          >
+                            🍳 Preparing
+                          </Button>
+                        )}
+
+                        {o.status === "Preparing" && (
+                          <Button
+                            size="lg"
+                            onClick={() => updateStatus(o.id, "Ready")}
+                            className="flex-1 min-w-[120px] h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
+                          >
+                            ✅ Ready
+                          </Button>
+                        )}
+
+                        {o.status === "Ready" && (
+                          <div className="w-full space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter 4-digit OTP"
+                                maxLength={4}
+                                value={otpInputs[o.id] || ""}
+                                onChange={(e) =>
+                                  setOtpInputs((prev) => ({
+                                    ...prev,
+                                    [o.id]: e.target.value.replace(
+                                      /[^0-9]/g,
+                                      ""
+                                    ),
+                                  }))
+                                }
+                                className="flex-1 h-11 text-center text-lg font-bold tracking-widest"
+                              />
+                              <Button
+                                size="lg"
+                                onClick={() => verifyOTP(o.id)}
+                                className="h-11 px-6 rounded-xl font-bold text-sm"
+                              >
+                                Verify & Complete
+                              </Button>
+                            </div>
+                            <Button
+                              size="lg"
+                              variant="outline"
+                              onClick={() =>
+                                updateStatus(o.id, "Completed")
+                              }
+                              className="w-full h-11 rounded-xl font-bold text-sm"
+                            >
+                              Complete Without OTP
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* ─── MENU TAB ─── */}
           <TabsContent value="menu">
             <div className="flex justify-end mb-3">
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setEditing({ ...blank })} className="rounded-full">
+                  <Button
+                    onClick={() => setEditing({ ...blank })}
+                    className="rounded-full"
+                  >
                     <Plus className="h-4 w-4 mr-1" /> Add Item
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{editing?.id ? "Edit" : "Add"} Menu Item</DialogTitle>
+                    <DialogTitle>
+                      {editing?.id ? "Edit" : "Add"} Menu Item
+                    </DialogTitle>
                   </DialogHeader>
                   {editing && (
                     <div className="space-y-3">
-                      <div className="grid grid-cols-[80px_1fr] gap-3">
-                        <div>
-                          <Label>Emoji</Label>
-                          <Input value={editing.emoji ?? ""} onChange={(e) => setEditing({ ...editing, emoji: e.target.value })} maxLength={4} />
-                        </div>
-                        <div>
-                          <Label>Name</Label>
-                          <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} maxLength={60} />
-                        </div>
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={editing.name || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, name: e.target.value })
+                          }
+                          maxLength={60}
+                        />
+                      </div>
+                      <div>
+                        <Label>Description</Label>
+                        <Input
+                          value={editing.description || ""}
+                          onChange={(e) =>
+                            setEditing({
+                              ...editing,
+                              description: e.target.value,
+                            })
+                          }
+                          maxLength={200}
+                        />
+                      </div>
+                      <div>
+                        <Label>Image URL</Label>
+                        <Input
+                          value={editing.image_url || ""}
+                          onChange={(e) =>
+                            setEditing({
+                              ...editing,
+                              image_url: e.target.value,
+                            })
+                          }
+                          placeholder="https://images.unsplash.com/..."
+                        />
                       </div>
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <Label>Price</Label>
-                          <Input type="number" min={0} value={editing.price} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} />
+                          <Input
+                            type="number"
+                            min={0}
+                            value={editing.price || 0}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                price: +e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div>
                           <Label>Stock</Label>
-                          <Input type="number" min={0} value={editing.stock} onChange={(e) => setEditing({ ...editing, stock: +e.target.value })} />
+                          <Input
+                            type="number"
+                            min={0}
+                            value={editing.available_quantity || 0}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                available_quantity: +e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div>
                           <Label>Category</Label>
-                          <Input value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} maxLength={30} />
+                          <Input
+                            value={editing.category || ""}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                category: e.target.value,
+                              })
+                            }
+                            maxLength={30}
+                          />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={editing.active} onCheckedChange={(v) => setEditing({ ...editing, active: v })} />
-                        <Label>Active</Label>
+                      <div className="flex gap-6">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={editing.is_active ?? true}
+                            onCheckedChange={(v) =>
+                              setEditing({ ...editing, is_active: v })
+                            }
+                          />
+                          <Label>Active</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={editing.veg_flag ?? true}
+                            onCheckedChange={(v) =>
+                              setEditing({ ...editing, veg_flag: v })
+                            }
+                          />
+                          <Label>Veg</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={editing.is_best ?? false}
+                            onCheckedChange={(v) =>
+                              setEditing({ ...editing, is_best: v })
+                            }
+                          />
+                          <Label>Best Seller</Label>
+                        </div>
                       </div>
                     </div>
                   )}
                   <DialogFooter>
-                    <Button onClick={save} className="rounded-full">Save</Button>
+                    <Button
+                      onClick={save}
+                      disabled={saving}
+                      className="rounded-full"
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
-            <div className="bg-card rounded-2xl shadow-soft border border-border/50 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {menu.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.emoji} {m.name}</TableCell>
-                      <TableCell>₹{m.price}</TableCell>
-                      <TableCell>{m.stock}</TableCell>
-                      <TableCell>
-                        <Switch checked={m.active} onCheckedChange={() => toggleActive(m)} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditing(m); setOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(m.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="orders">
-            <div className="space-y-6">
-              {orders.length === 0 && <p className="text-center text-muted-foreground py-12">No orders yet</p>}
-              
-              {Object.entries(groupedOrders).map(([slot, slotOrders]) => (
-                <div key={slot} className="space-y-3">
-                  <div className="flex justify-between items-center bg-muted/50 p-2 rounded-lg">
-                    <h3 className="font-bold text-lg">{slot} ({slotOrders.length} orders)</h3>
+            <div className="space-y-2">
+              {menu.map((m) => (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "bg-card rounded-xl shadow-soft border border-border/50 p-3 flex items-center gap-3",
+                    !m.is_active && "opacity-50"
+                  )}
+                >
+                  <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                    <img
+                      src={
+                        m.image_url ||
+                        "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
+                      }
+                      alt={m.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  
-                  {slotOrders.map((o) => (
-                    <div key={o.id} className="bg-card rounded-2xl shadow-soft border border-border/50 p-4">
-                      <div className="flex justify-between items-start gap-3 mb-2">
-                        <div>
-                          <p className="font-semibold">{o.id} · {o.userName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(o.createdAt).toLocaleString()} · {o.paymentMethod}
-                          </p>
-                        </div>
-                        <StatusBadge status={o.status} />
-                      </div>
-                      <div className="text-sm text-muted-foreground mb-3">
-                        {o.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}
-                      </div>
-                      <div className="flex items-center justify-between gap-3 mt-4">
-                        <span className="font-semibold">₹{o.total}</span>
-                        <div className="flex gap-2">
-                          {o.status === "Placed" && (
-                            <Button size="sm" onClick={() => updateStatus(o.id, "Preparing")}>Prep</Button>
-                          )}
-                          {o.status === "Preparing" && (
-                            <Button size="sm" variant="default" onClick={() => updateStatus(o.id, "Ready")}>Ready</Button>
-                          )}
-                          {o.status === "Ready" && (
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "Completed")}>Done</Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{m.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ₹{m.price} · Stock: {m.available_quantity} ·{" "}
+                      {m.category}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={m.is_active}
+                    onCheckedChange={() => toggleActive(m)}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditing(m);
+                      setOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => remove(m.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>

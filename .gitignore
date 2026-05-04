@@ -6,4 +6,6 @@ Backend/*.sqlite3
 .env
 .idea/
 .vscode/
-*.log
+Backend/*.log
+Backend/*.db-shm
+Backend/*.db-wal

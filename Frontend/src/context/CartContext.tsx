@@ -4,8 +4,8 @@ import { CartItem, MenuItem } from "@/lib/types";
 interface CartCtx {
   items: CartItem[];
   add: (item: MenuItem) => void;
-  remove: (id: string) => void;
-  setQty: (id: string, qty: number) => void;
+  remove: (id: number) => void;
+  setQty: (id: number, qty: number) => void;
   clear: () => void;
   count: number;
   total: number;
@@ -31,14 +31,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const add = (item: MenuItem) => {
     setItems((prev) => {
       const found = prev.find((i) => i.id === item.id);
-      if (found) return prev.map((i) => (i.id === item.id ? { ...i, qty: Math.min(i.qty + 1, item.stock) } : i));
-      return [...prev, { id: item.id, name: item.name, price: item.price, qty: 1, emoji: item.emoji }];
+      if (found)
+        return prev.map((i) =>
+          i.id === item.id
+            ? { ...i, qty: Math.min(i.qty + 1, item.available_quantity) }
+            : i
+        );
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          qty: 1,
+          image_url: item.image_url,
+        },
+      ];
     });
   };
 
-  const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const remove = (id: number) =>
+    setItems((prev) => prev.filter((i) => i.id !== id));
 
-  const setQty = (id: string, qty: number) => {
+  const setQty = (id: number, qty: number) => {
     if (qty <= 0) return remove(id);
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty } : i)));
   };
@@ -49,7 +64,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const total = items.reduce((s, i) => s + i.qty * i.price, 0);
 
   return (
-    <CartContext.Provider value={{ items, add, remove, setQty, clear, count, total }}>
+    <CartContext.Provider
+      value={{ items, add, remove, setQty, clear, count, total }}
+    >
       {children}
     </CartContext.Provider>
   );
