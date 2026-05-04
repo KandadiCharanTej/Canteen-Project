@@ -1,0 +1,9 @@
+Backend/venv/
+Backend/__pycache__/
+Backend/*.db
+Backend/*.sqlite
+Backend/*.sqlite3
+.env
+.idea/
+.vscode/
+*.log
