@@ -56,6 +56,7 @@ class Order(Base):
     payment_status = Column(String, default="pending")  # pending, paid
     payment_method = Column(String, default="UPI")  # UPI
     upi_ref = Column(String, nullable=True)
+    payment_screenshot = Column(String, nullable=True)  # URL/Path to screenshot
     time_slot = Column(String, index=True)
     otp = Column(String)  # 4-digit OTP
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

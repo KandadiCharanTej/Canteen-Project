@@ -26,19 +26,19 @@ export function FoodCard({ item }: { item: MenuItem }) {
   return (
     <div
       className={cn(
-        "bg-card rounded-2xl shadow-soft p-3 flex gap-3 border border-border/50 hover:shadow-card transition-all duration-200",
+        "bg-card rounded-2xl shadow-soft p-3 flex gap-3 border border-border/50 hover:shadow-card transition-all duration-200 group",
         isOut && "opacity-60"
       )}
     >
       {/* Food Image */}
-      <div className="h-24 w-24 rounded-xl overflow-hidden shrink-0 relative">
+      <div className="h-24 w-24 rounded-xl overflow-hidden shrink-0 relative group-hover:shadow-soft transition-all duration-300">
         <img
           src={
             item.image_url ||
             "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"
           }
           alt={item.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           loading="lazy"
         />
         {item.veg_flag !== undefined && (

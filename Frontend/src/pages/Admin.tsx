@@ -146,10 +146,36 @@ export default function Admin() {
     }
   };
 
+  // Calculate Stats
+  const activeOrders = orders.filter(o => o.status === "Placed" || o.status === "Preparing").length;
+  const todaysRevenue = orders.reduce((sum, o) => sum + (o.payment_status === "paid" ? o.total_price : 0), 0);
+  const todaysOrders = orders.length;
+
   return (
     <>
       <PageHeader title="Admin Dashboard" showLogout />
-      <div className="max-w-4xl mx-auto px-4 py-4 safe-bottom">
+      <div className="max-w-4xl mx-auto px-4 py-4 safe-bottom space-y-6">
+        
+        {/* Stats Grid from ADU Food Court */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-2xl p-4 border border-border shadow-soft">
+            <h3 className="text-2xl font-black text-slate-900 mb-0.5">{todaysOrders}</h3>
+            <p className="text-muted-foreground text-[13px] font-medium">Total Orders</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-border shadow-soft">
+            <h3 className="text-2xl font-black text-success mb-0.5">₹{todaysRevenue}</h3>
+            <p className="text-muted-foreground text-[13px] font-medium">Today's Revenue</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-border shadow-soft">
+            <h3 className="text-2xl font-black text-warning mb-0.5">{activeOrders}</h3>
+            <p className="text-muted-foreground text-[13px] font-medium">Active Orders</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-border shadow-soft">
+            <h3 className="text-2xl font-black text-primary mb-0.5">{menu.length}</h3>
+            <p className="text-muted-foreground text-[13px] font-medium">Menu Items</p>
+          </div>
+        </div>
+
         <Tabs defaultValue="orders">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="orders" className="text-base">

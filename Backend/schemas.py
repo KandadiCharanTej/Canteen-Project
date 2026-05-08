@@ -115,6 +115,7 @@ class OrderOut(BaseModel):
     status: str
     payment_status: str
     payment_method: str
+    payment_screenshot: Optional[str] = None
     time_slot: str
     otp: Optional[str] = None
     created_at: datetime.datetime
