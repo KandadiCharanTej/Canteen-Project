@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/verify-otp", auto_error=False)
 
 
 def get_db():
@@ -43,7 +43,7 @@ def get_db():
         db.close()
 
 
-# ─────────── JWT Utilities ───────────
+# ─────────── Auth Utilities ───────────
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -51,20 +51,11 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
 def get_user_by_contact(db: Session, contact: str):
     return db.query(models.User).filter(models.User.contact == contact).first()
 
 
 def get_current_user_optional(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Returns user if token is valid, None otherwise. For public routes."""
     if not token:
         return None
     try:
@@ -72,23 +63,22 @@ def get_current_user_optional(token: str = Depends(oauth2_scheme), db: Session =
         contact: str = payload.get("sub")
         if contact is None:
             return None
-        user = get_user_by_contact(db, contact=contact)
-        return user
+        return get_user_by_contact(db, contact=contact)
     except JWTError:
         return None
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Requires authentication. Raises 401 if not authenticated."""
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         contact: str = payload.get("sub")
-        if contact is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        is_temp = payload.get("temp", False)
+        if contact is None or is_temp:
+            raise HTTPException(status_code=401, detail="Invalid session")
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid session")
     user = get_user_by_contact(db, contact=contact)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
@@ -102,41 +92,103 @@ def require_admin(user: models.User = Depends(get_current_user)):
 
 
 # ─────────── Auth Endpoints ───────────
-@app.post("/api/signup", response_model=schemas.Token)
-def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = get_user_by_contact(db, contact=user.contact)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Contact already registered")
-    hashed_password = get_password_hash(user.password)
+@app.post("/api/auth/send-otp")
+def send_otp(payload: schemas.OTPSend, db: Session = Depends(get_db)):
+    # Delete old OTPs for this contact
+    db.query(models.UserOTP).filter(models.UserOTP.contact == payload.contact).delete()
+    
+    otp_code = str(random.randint(1000, 9999))
+    # Production: Use an SMS gateway here
+    print(f"OTP for {payload.contact}: {otp_code}")
+    with open("otp.txt", "w") as f:
+        f.write(f"Latest OTP for {payload.contact}: {otp_code}")
+    
+    expires = datetime.utcnow() + timedelta(minutes=5)
+    db_otp = models.UserOTP(
+        contact=payload.contact,
+        otp=otp_code,
+        expires_at=expires
+    )
+    db.add(db_otp)
+    db.commit()
+    return {"detail": "OTP sent successfully", "otp": otp_code} # Included for development
+
+
+@app.post("/api/auth/verify-otp")
+def verify_otp(payload: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
+    db_otp = db.query(models.UserOTP).filter(
+        models.UserOTP.contact == payload.contact,
+        models.UserOTP.otp == payload.otp,
+        models.UserOTP.expires_at > datetime.utcnow(),
+        models.UserOTP.is_used == False
+    ).first()
+    
+    if not db_otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    db_otp.is_used = True
+    db.commit()
+    
+    user = get_user_by_contact(db, contact=payload.contact)
+    
+    if user:
+        access_token = create_access_token(data={"sub": user.contact})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user,
+            "is_registered": True
+        }
+    else:
+        # User doesn't exist - return a temp token for signup
+        temp_token = create_access_token(data={"sub": payload.contact, "temp": True}, expires_delta=timedelta(minutes=10))
+        return {
+            "access_token": temp_token,
+            "token_type": "bearer",
+            "is_registered": False
+        }
+
+
+@app.post("/api/auth/signup", response_model=schemas.Token)
+def signup(
+    user_data: schemas.UserCreate, 
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        contact: str = payload.get("sub")
+        is_temp = payload.get("temp", False)
+        if not is_temp or contact != user_data.contact:
+            raise HTTPException(status_code=401, detail="Invalid signup session")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid signup session")
+
+    existing = get_user_by_contact(db, contact=user_data.contact)
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    # Check if in admin whitelist
+    admin_check = db.query(models.AdminWhitelist).filter(models.AdminWhitelist.contact == user_data.contact).first()
+    role = "admin" if admin_check else "student"
+
     db_user = models.User(
-        name=user.name,
-        contact=user.contact,
-        role=user.role,
-        category=user.category,
-        student_class=user.student_class,
-        hashed_password=hashed_password,
+        name=user_data.name,
+        contact=user_data.contact,
+        role=role,
+        category=user_data.category,
+        student_class=user_data.student_class,
+        hashed_password="OTP_AUTH" # No password needed
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
     access_token = create_access_token(data={"sub": db_user.contact})
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": db_user,
-    }
-
-
-@app.post("/api/login", response_model=schemas.Token)
-def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = get_user_by_contact(db, contact=credentials.contact)
-    if not user or not verify_password(credentials.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect contact or password")
-    access_token = create_access_token(data={"sub": user.contact})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user,
     }
 
 

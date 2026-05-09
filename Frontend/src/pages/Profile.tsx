@@ -15,8 +15,8 @@ import {
   Heart,
   Clock,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
-import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
 export default function Profile() {
@@ -44,10 +44,10 @@ export default function Profile() {
 
   if (loading)
     return (
-      <>
-        <PageHeader title="Profile" showBack />
-        <Spinner label="Loading profile..." />
-      </>
+      <div className="bg-gray-50 min-h-screen">
+        <PageHeader title="Profile" />
+        <div className="flex justify-center py-20"><Spinner label="Loading your profile..." /></div>
+      </div>
     );
 
   const handleLogout = () => {
@@ -56,131 +56,165 @@ export default function Profile() {
   };
 
   return (
-    <>
-      <PageHeader title="Profile" showBack />
-      <div className="max-w-2xl mx-auto px-4 py-4 safe-bottom space-y-4">
-        {/* User Card */}
-        <div className="bg-gradient-primary rounded-2xl p-5 text-primary-foreground">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold">
-              {user?.name?.charAt(0) || "U"}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">{user?.name}</h2>
-              <p className="text-sm opacity-90 flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5" /> {user?.contact}
-              </p>
-              <p className="text-xs opacity-80 flex items-center gap-1.5 mt-0.5">
-                <GraduationCap className="h-3.5 w-3.5" />{" "}
-                {user?.category || "Student"}
-                {user?.student_class && ` · ${user.student_class}`}
-              </p>
-            </div>
-          </div>
+    <div className="bg-gray-50 min-h-screen pb-24 md:pb-12">
+      {/* Profile Header - Responsive */}
+      <div className="bg-white px-4 pt-10 pb-8 shadow-sm mb-8 rounded-b-[3rem] md:rounded-b-none md:border-b md:border-gray-100">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
+           <div className="h-24 w-24 md:h-32 md:w-32 rounded-full bg-gradient-to-br from-primary to-orange-400 text-white flex items-center justify-center text-4xl md:text-6xl font-black shadow-xl border-8 border-white">
+             {user?.name?.charAt(0) || "U"}
+           </div>
+           <div className="text-center md:text-left flex-1">
+             <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-2">{user?.name}</h2>
+             <div className="flex flex-wrap justify-center md:justify-start gap-3">
+               <span className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
+                 <UserIcon className="h-3.5 w-3.5" /> {user?.role}
+               </span>
+               <span className="bg-gray-100 text-gray-500 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                 <Phone className="h-3.5 w-3.5" /> {user?.contact}
+               </span>
+             </div>
+           </div>
         </div>
+      </div>
 
-        {/* Stats Grid */}
-        {profile && (
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={ShoppingBag}
-              label="Total Orders"
-              value={profile.total_orders.toString()}
-            />
-            <StatCard
-              icon={IndianRupee}
-              label="Total Spent"
-              value={`₹${profile.total_spent.toFixed(0)}`}
-            />
-          </div>
-        )}
+      <div className="px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Left Column: Account Info & Stats */}
+          <div className="space-y-8">
+            <section>
+              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
+                <div className="h-2 w-8 bg-primary rounded-full" /> Account Details
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-white rounded-[2rem] p-6 flex items-center gap-5 shadow-sm border border-gray-100">
+                   <div className="bg-blue-50 p-4 rounded-2xl">
+                     <GraduationCap className="h-7 w-7 text-blue-500" />
+                   </div>
+                   <div>
+                     <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Student Classification</p>
+                     <p className="text-lg font-black text-gray-900">
+                       {user?.category || "Student"} {user?.student_class && `· ${user?.student_class}`}
+                     </p>
+                   </div>
+                </div>
+              </div>
+            </section>
 
-        {/* Favorites */}
-        {profile && profile.favorite_items.length > 0 && (
-          <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-4">
-            <h3 className="font-semibold flex items-center gap-2 mb-3">
-              <Heart className="h-4 w-4 text-destructive" /> Favorite Items
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.favorite_items.map((item) => (
-                <span
-                  key={item}
-                  className="bg-accent text-accent-foreground text-sm px-3 py-1.5 rounded-full font-medium"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+            <section>
+              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
+                <div className="h-2 w-8 bg-orange-400 rounded-full" /> Fast Stats
+              </h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group hover:shadow-xl transition-all duration-300">
+                  <div className="bg-orange-50 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+                    <ShoppingBag className="h-7 w-7 text-orange-500" />
+                  </div>
+                  <p className="text-4xl font-black text-gray-900 leading-none mb-2">{profile?.total_orders}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Orders</p>
+                </div>
+                
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group hover:shadow-xl transition-all duration-300">
+                  <div className="bg-green-50 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+                    <IndianRupee className="h-7 w-7 text-green-500" />
+                  </div>
+                  <p className="text-4xl font-black text-gray-900 leading-none mb-2">₹{profile?.total_spent.toFixed(0)}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">Spent</p>
+                </div>
+              </div>
+            </section>
 
-        {/* Order History Timeline */}
-        <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-4">
-          <h3 className="font-semibold flex items-center gap-2 mb-3">
-            <Clock className="h-4 w-4 text-primary" /> Order Timeline
-          </h3>
-          {orders.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No orders yet
-            </p>
-          ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {orders.slice(0, 10).map((o) => (
-                <div
-                  key={o.id}
-                  className="flex items-start gap-3 border-l-2 border-border pl-3 pb-2"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold">Order #{o.id}</p>
-                      <StatusBadge status={o.status} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleDateString()} ·{" "}
-                      {o.time_slot} · ₹{o.total_price}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {o.items
-                        .map(
-                          (i) =>
-                            `${i.item?.name || "Item"} ×${i.quantity}`
-                        )
-                        .join(", ")}
-                    </p>
+            {profile && profile.favorite_items.length > 0 && (
+              <section>
+                <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
+                  <div className="h-2 w-8 bg-red-400 rounded-full" /> Your Favorites
+                </h3>
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                  <div className="flex flex-wrap gap-3">
+                    {profile.favorite_items.map((item) => (
+                      <span
+                        key={item}
+                        className="bg-gray-50 border-2 border-gray-100 text-gray-700 text-sm px-6 py-3 rounded-2xl font-black shadow-sm"
+                      >
+                        {item}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </section>
+            )}
+            
+            <div className="hidden lg:block pt-8">
+              <Button
+                onClick={handleLogout}
+                variant="destructive"
+                className="w-full h-16 rounded-[1.5rem] font-black text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <LogOut className="h-6 w-6 stroke-[3]" /> LOG OUT
+              </Button>
             </div>
-          )}
+          </div>
+
+          {/* Right Column: Order History */}
+          <div className="space-y-8">
+            <section>
+              <div className="flex items-center justify-between mb-5">
+                 <h3 className="text-xl font-black text-gray-900 flex items-center gap-3">
+                   <div className="h-2 w-8 bg-blue-400 rounded-full" /> Recent Orders
+                 </h3>
+                 <Button variant="link" onClick={() => navigate("/orders")} className="text-primary text-sm font-black p-0 h-auto uppercase tracking-widest">View All</Button>
+              </div>
+              
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                {orders.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-[1.5rem] border-2 border-dashed border-gray-200">
+                    <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No recent orders found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {orders.slice(0, 5).map((o) => (
+                      <div key={o.id} className="group relative flex gap-6 pb-6 last:pb-0 border-b last:border-0 border-gray-50">
+                        <div className="flex flex-col items-center gap-2">
+                           <div className={cn(
+                             "w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg",
+                             o.status === "Completed" ? "bg-green-500" : "bg-orange-500 shadow-orange-200"
+                           )}>
+                             <ShoppingBag className="h-6 w-6" />
+                           </div>
+                           <div className="flex-1 w-0.5 bg-gray-50" />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                             <span className="font-black text-lg text-gray-900 underline decoration-primary/20 underline-offset-4">Order #{o.id}</span>
+                             <span className="font-black text-xl text-gray-900">₹{o.total_price}</span>
+                          </div>
+                          <div className="text-xs text-gray-400 font-black mb-3 uppercase tracking-widest">
+                             {new Date(o.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                          <div className="text-sm text-gray-500 font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed">
+                            {o.items.map((i) => i.item?.name).join(", ")}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+            
+            <div className="lg:hidden pt-4">
+              <Button
+                onClick={handleLogout}
+                className="w-full h-16 rounded-2xl font-black bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-sm transition-all text-lg"
+              >
+                <LogOut className="h-6 w-6 mr-3 stroke-[3]" /> LOG OUT
+              </Button>
+            </div>
+          </div>
+
         </div>
-
-        {/* Logout */}
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="w-full rounded-full font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
-        >
-          <LogOut className="h-4 w-4 mr-2" /> Logout
-        </Button>
       </div>
-    </>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: any;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-4 text-center">
-      <Icon className="h-6 w-6 text-primary mx-auto mb-2" />
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

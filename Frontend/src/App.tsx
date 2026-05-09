@@ -5,17 +5,45 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
-import { BottomNav } from "@/components/BottomNav";
-import Home from "@/pages/Home";
-import Cart from "@/pages/Cart";
-import Checkout from "@/pages/Checkout";
-import Orders from "@/pages/Orders";
-import Profile from "@/pages/Profile";
-import Admin from "@/pages/Admin";
-import Login from "@/pages/Login";
-import NotFound from "@/pages/NotFound";
+import { lazy, Suspense } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Spinner } from "@/components/Spinner";
+
+const Home = lazy(() => import("@/pages/Home"));
+const Cart = lazy(() => import("@/pages/Cart"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const Orders = lazy(() => import("@/pages/Orders"));
+const Search = lazy(() => import("@/pages/Search"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const Login = lazy(() => import("@/pages/Login"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+import { useAuth } from "@/context/AuthContext";
+import { Navigate, useLocation } from "react-router-dom";
+
+const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
+  const { user, loading, isLoggedIn } = useAuth();
+  const location = useLocation();
+
+  if (loading) return (
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <Spinner label="Verifying session..." />
+    </div>
+  );
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  if (adminOnly && user?.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -25,21 +53,31 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CartProvider>
-            <Routes>
-              {/* Public - NO login required */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
+            <MainLayout>
+              <Suspense fallback={
+                <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+                  <Spinner label="Loading CanteenFood..." />
+                </div>
+              }>
+                <Routes>
+                  {/* Public - NO login required */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/login" element={<Login />} />
 
-              {/* These pages handle their own auth checks */}
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
+                  {/* Protected Routes */}
+                  <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+                  <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                  <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  
+                  {/* Admin Only */}
+                  <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <BottomNav />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </MainLayout>
           </CartProvider>
         </AuthProvider>
       </BrowserRouter>

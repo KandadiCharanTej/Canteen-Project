@@ -33,6 +33,8 @@ class Menu(Base):
     description = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_best = Column(Boolean, default=False)  # Featured/Best food
+    is_trending = Column(Boolean, default=False)  # Trending food
+    prep_time = Column(Integer, nullable=True)  # in minutes
     date = Column(DateTime, default=datetime.datetime.utcnow)
 
 
@@ -76,3 +78,23 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     item = relationship("Menu")
+
+
+class UserOTP(Base):
+    __tablename__ = "user_otps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contact = Column(String, index=True)
+    otp = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    expires_at = Column(DateTime)
+    is_used = Column(Boolean, default=False)
+
+
+class AdminWhitelist(Base):
+    __tablename__ = "admin_whitelist"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    contact = Column(String, unique=True, index=True)
+    name = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

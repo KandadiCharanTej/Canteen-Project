@@ -39,21 +39,38 @@ http.interceptors.response.use(
 
 // ─────────── Auth API ───────────
 export const authApi = {
-  async signup(data: {
-    name: string;
-    contact: string;
-    password: string;
-    category?: string;
-    student_class?: string;
-  }): Promise<AuthResponse> {
-    const res = await http.post<AuthResponse>("/signup", data);
-    localStorage.setItem("canteen_token", res.data.access_token);
-    localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
+  async sendOTP(contact: string): Promise<any> {
+    const res = await http.post("/auth/send-otp", { contact });
     return res.data;
   },
 
-  async login(contact: string, password: string): Promise<AuthResponse> {
-    const res = await http.post<AuthResponse>("/login", { contact, password });
+  async verifyOTP(contact: string, otp: string): Promise<{
+    access_token: string;
+    user?: User;
+    is_registered: boolean;
+  }> {
+    const res = await http.post<{
+      access_token: string;
+      user?: User;
+      is_registered: boolean;
+    }>("/auth/verify-otp", { contact, otp });
+    
+    if (res.data.access_token) {
+      localStorage.setItem("canteen_token", res.data.access_token);
+      if (res.data.user) {
+        localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
+      }
+    }
+    return res.data;
+  },
+
+  async signup(data: {
+    name: string;
+    contact: string;
+    category?: string;
+    student_class?: string;
+  }): Promise<AuthResponse> {
+    const res = await http.post<AuthResponse>("/auth/signup", data);
     localStorage.setItem("canteen_token", res.data.access_token);
     localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
     return res.data;

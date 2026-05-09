@@ -9,3 +9,6 @@ Backend/*.sqlite3
 Backend/*.log
 Backend/*.db-shm
 Backend/*.db-wal
+*.db
+*.db-shm
+*.db-wal

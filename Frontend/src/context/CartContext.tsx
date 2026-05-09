@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { CartItem, MenuItem } from "@/lib/types";
+import { toast } from "sonner";
 
 interface CartCtx {
   items: CartItem[];
@@ -31,12 +32,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const add = (item: MenuItem) => {
     setItems((prev) => {
       const found = prev.find((i) => i.id === item.id);
-      if (found)
+      if (found) {
+        toast.success(`Increased ${item.name} quantity`);
         return prev.map((i) =>
           i.id === item.id
             ? { ...i, qty: Math.min(i.qty + 1, item.available_quantity) }
             : i
         );
+      }
+      toast.success(`Added ${item.name} to cart`);
       return [
         ...prev,
         {
@@ -50,8 +54,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const remove = (id: number) =>
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const remove = (id: number) => {
+    setItems((prev) => {
+      const item = prev.find(i => i.id === id);
+      if (item) toast.info(`Removed ${item.name} from cart`);
+      return prev.filter((i) => i.id !== id);
+    });
+  }
 
   const setQty = (id: number, qty: number) => {
     if (qty <= 0) return remove(id);

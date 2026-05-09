@@ -6,14 +6,22 @@ import datetime
 class UserCreate(BaseModel):
     name: str
     contact: str
-    password: str
-    role: str = "student"
     category: str = "Student"
     student_class: Optional[str] = None
 
+class OTPSend(BaseModel):
+    contact: str
+
+class OTPVerifyRequest(BaseModel):
+    contact: str
+    otp: str
+
+class AdminCreate(BaseModel):
+    contact: str
+    name: str
+
 class UserLogin(BaseModel):
     contact: str
-    password: str
 
 class UserOut(BaseModel):
     id: int
@@ -53,6 +61,8 @@ class MenuItemBase(BaseModel):
     description: Optional[str] = None
     is_active: bool = True
     is_best: bool = False
+    is_trending: bool = False
+    prep_time: Optional[int] = None
 
 class MenuItemCreate(MenuItemBase):
     pass
@@ -67,6 +77,8 @@ class MenuItemUpdate(BaseModel):
     description: Optional[str] = None
     is_active: Optional[bool] = None
     is_best: Optional[bool] = None
+    is_trending: Optional[bool] = None
+    prep_time: Optional[int] = None
 
 class MenuItemOut(MenuItemBase):
     id: int

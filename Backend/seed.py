@@ -12,24 +12,32 @@ db.query(models.Order).delete()
 db.query(models.Menu).delete()
 db.query(models.User).delete()
 db.query(models.TimeSlot).delete()
+db.query(models.AdminWhitelist).delete()
+
+# ─── Admin Whitelist ───
+whitelists = [
+    models.AdminWhitelist(contact="9876543210", name="Canteen Manager"),
+    models.AdminWhitelist(contact="1234567890", name="Kitchen Head")
+]
+db.add_all(whitelists)
 
 # ─── Users ───
 admin = models.User(
-    name="Canteen Manager", contact="admin", role="admin",
-    category="Admin", hashed_password=pwd_context.hash("admin123")
+    name="Canteen Manager", contact="9876543210", role="admin",
+    category="Admin", hashed_password="OTP_AUTH"
 )
 admin2 = models.User(
-    name="Kitchen Head", contact="admin2", role="admin",
-    category="Admin", hashed_password=pwd_context.hash("admin123")
+    name="Kitchen Head", contact="1234567890", role="admin",
+    category="Admin", hashed_password="OTP_AUTH"
 )
 student = models.User(
     name="Charan Tej", contact="9999999999", role="student",
     category="Student", student_class="CSE-A 2nd Year",
-    hashed_password=pwd_context.hash("user123")
+    hashed_password="OTP_AUTH"
 )
 lecturer = models.User(
     name="Dr. Ramesh", contact="8888888888", role="student",
-    category="Lecturer", hashed_password=pwd_context.hash("user123")
+    category="Lecturer", hashed_password="OTP_AUTH"
 )
 
 db.add_all([admin, admin2, student, lecturer])
