@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 import datetime
 
@@ -12,16 +12,9 @@ class UserCreate(BaseModel):
 class OTPSend(BaseModel):
     contact: str
 
-class OTPVerifyRequest(BaseModel):
+class OTPVerifyAuth(BaseModel):
     contact: str
     otp: str
-
-class AdminCreate(BaseModel):
-    contact: str
-    name: str
-
-class UserLogin(BaseModel):
-    contact: str
 
 class UserOut(BaseModel):
     id: int
@@ -32,26 +25,15 @@ class UserOut(BaseModel):
     student_class: Optional[str] = None
     profile_image: Optional[str] = None
     created_at: datetime.datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
-class Token(BaseModel):
+class AuthResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserOut
 
-class TokenData(BaseModel):
-    contact: Optional[str] = None
-
-# ──────────── Profile ────────────
-class ProfileOut(BaseModel):
-    user: UserOut
-    total_orders: int
-    total_spent: float
-    favorite_items: List[str]
-
 # ──────────── Menu ────────────
-class MenuItemBase(BaseModel):
+class MenuBase(BaseModel):
     name: str
     category: str
     price: float
@@ -64,10 +46,10 @@ class MenuItemBase(BaseModel):
     is_trending: bool = False
     prep_time: Optional[int] = None
 
-class MenuItemCreate(MenuItemBase):
+class MenuCreate(MenuBase):
     pass
 
-class MenuItemUpdate(BaseModel):
+class MenuUpdate(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     price: Optional[float] = None
@@ -80,11 +62,10 @@ class MenuItemUpdate(BaseModel):
     is_trending: Optional[bool] = None
     prep_time: Optional[int] = None
 
-class MenuItemOut(MenuItemBase):
+class MenuOut(MenuBase):
     id: int
     date: datetime.datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ──────────── Time Slots ────────────
 class TimeSlotBase(BaseModel):
@@ -95,8 +76,7 @@ class TimeSlotBase(BaseModel):
 
 class TimeSlotOut(TimeSlotBase):
     id: int
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TimeSlotCreate(BaseModel):
     slot_time: str
@@ -112,9 +92,8 @@ class OrderItemOut(BaseModel):
     item_id: int
     quantity: int
     price_at_time: float
-    item: MenuItemOut
-    class Config:
-        from_attributes = True
+    item: MenuOut
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderCreate(BaseModel):
     time_slot: str
@@ -132,10 +111,7 @@ class OrderOut(BaseModel):
     otp: Optional[str] = None
     created_at: datetime.datetime
     items: List[OrderItemOut]
-    user_name: Optional[str] = None
-    user_contact: Optional[str] = None
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrderUpdateStatus(BaseModel):
     status: str

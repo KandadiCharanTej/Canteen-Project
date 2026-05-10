@@ -6,7 +6,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-export function FoodCard({ item }: { item: MenuItem }) {
+import React from "react";
+
+export const FoodCard = React.memo(function FoodCard({ item }: { item: MenuItem }) {
   const { items, add, setQty } = useCart();
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
@@ -69,7 +71,7 @@ export function FoodCard({ item }: { item: MenuItem }) {
 
           {item.prep_time && (
             <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              <Clock className="h-3 w-3 text-gray-300" /> {item.prep_time} mins
+               <Clock className="h-3 w-3 text-gray-300" /> {item.prep_time} mins
             </div>
           )}
         </div>
@@ -84,8 +86,9 @@ export function FoodCard({ item }: { item: MenuItem }) {
               "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop"
             }
             alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out bg-gray-100"
             loading="lazy"
+            decoding="async"
           />
         </div>
         
@@ -123,4 +126,5 @@ export function FoodCard({ item }: { item: MenuItem }) {
       </div>
     </div>
   );
-}
+});
+

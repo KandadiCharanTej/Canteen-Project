@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ShoppingBag, Star, Flame, ChevronRight, Clock, MapPin } from "lucide-react";
 import { menuApi } from "@/lib/api";
@@ -6,29 +6,22 @@ import { MenuItem } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FoodCard } from "@/components/FoodCard";
-import { Spinner } from "@/components/Spinner";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Home() {
-  const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: menu = [], isLoading: loading } = useQuery({
+    queryKey: ["menu"],
+    queryFn: () => menuApi.getMenu(),
+    refetchInterval: 10000, // Sync every 10 seconds for live inventory
+  });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All");
   const { count, total } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    menuApi
-      .getMenu()
-      .then((m) => {
-        setMenu(m);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(menu.map((m) => m.category)))],

@@ -58,12 +58,35 @@ export default function Checkout() {
     }
   };
 
-  const openUPI = () => {
+  const openUPI = (app?: string) => {
     const amount = placedOrder?.total_price || total;
-    const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(
+    let upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(
       UPI_NAME
     )}&am=${amount}&cu=INR&tn=Order%20${placedOrder?.id || ""}`;
+    
+    // Add specific app package if selected
+    if (app === "phonepe") upiLink += "&mode=02&purpose=00"; // Example PhonePe hints
+    
     window.location.href = upiLink;
+  };
+
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && placedOrder) {
+      setUploading(true);
+      try {
+        await ordersApi.uploadScreenshot(placedOrder.id, file);
+        setScreenshot(file);
+        toast.success("Screenshot uploaded!");
+      } catch {
+        toast.error("Failed to upload screenshot");
+      } finally {
+        setUploading(false);
+      }
+    }
   };
 
   const handlePaid = async () => {
@@ -71,9 +94,9 @@ export default function Checkout() {
       try {
         await ordersApi.markSelfPaid(placedOrder.id);
         setPaidClicked(true);
-        toast.success("Payment acknowledgment sent! Admin will verify.");
+        toast.success("Payment submitted for verification!");
       } catch {
-        toast.error("Failed to send payment acknowledgment");
+        toast.error("Failed to submit payment verification");
       }
     }
   };
@@ -121,26 +144,72 @@ export default function Checkout() {
           </div>
 
           {/* Payment Section */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 overflow-hidden">
             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-blue-500" /> Payment
+              <Smartphone className="h-5 w-5 text-blue-500" /> Pay via UPI
             </h3>
             
             {!paidClicked ? (
-               <div className="space-y-3">
-                 <Button onClick={openUPI} className="w-full h-14 rounded-2xl font-black text-lg bg-blue-600 hover:bg-blue-700 shadow-sm transition-all" id="pay-upi-btn">
-                   Pay ₹{placedOrder.total_price} via UPI
-                 </Button>
-                 <Button onClick={handlePaid} variant="outline" className="w-full h-14 rounded-2xl font-bold border-gray-200 text-gray-700 hover:bg-gray-50 transition-all" id="i-have-paid-btn">
-                   I have already paid
+               <div className="space-y-4">
+                 <div className="grid grid-cols-3 gap-3">
+                    <button onClick={() => openUPI("gpay")} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all">
+                       <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" className="h-6" />
+                       <span className="text-[10px] font-bold text-gray-500">GPay</span>
+                    </button>
+                    <button onClick={() => openUPI("phonepe")} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition-all">
+                       <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/PhonePe_Logo.svg" alt="PhonePe" className="h-6" />
+                       <span className="text-[10px] font-bold text-gray-500">PhonePe</span>
+                    </button>
+                    <button onClick={() => openUPI()} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:border-primary/20 transition-all">
+                       <ReceiptText className="h-6 w-6 text-gray-400" />
+                       <span className="text-[10px] font-bold text-gray-500">Other</span>
+                    </button>
+                 </div>
+
+                 <div className="relative">
+                    <input 
+                      type="file" 
+                      id="screenshot" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleScreenshotUpload}
+                      disabled={uploading}
+                    />
+                    <label 
+                      htmlFor="screenshot" 
+                      className={cn(
+                        "w-full h-14 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center gap-3 cursor-pointer hover:bg-gray-50 transition-all",
+                        screenshot && "border-green-200 bg-green-50"
+                      )}
+                    >
+                      {uploading ? (
+                        <span className="text-sm font-bold text-gray-400">Uploading...</span>
+                      ) : screenshot ? (
+                        <>
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <span className="text-sm font-bold text-green-800">Screenshot Attached</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-5 w-5 text-gray-400" />
+                          <span className="text-sm font-bold text-gray-500">Upload Screenshot (Optional)</span>
+                        </>
+                      )}
+                    </label>
+                 </div>
+
+                 <Button onClick={handlePaid} className="w-full h-14 rounded-2xl font-black text-lg bg-[#60b246] hover:bg-[#529b3b] shadow-sm transition-all" id="i-have-paid-btn">
+                   I Have Paid
                  </Button>
                </div>
             ) : (
-               <div className="flex items-center gap-3 bg-green-50 p-4 rounded-2xl border border-green-100">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+               <div className="flex items-center gap-3 bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center animate-pulse">
+                    <Clock className="w-6 h-6 text-blue-600" />
+                  </div>
                   <div>
-                    <p className="text-sm font-bold text-green-800">Payment acknowledgment sent</p>
-                    <p className="text-xs font-medium text-green-600 mt-0.5">Admin will verify your payment shortly</p>
+                    <p className="text-sm font-bold text-blue-800">Verification Pending</p>
+                    <p className="text-xs font-medium text-blue-600 mt-0.5">Admin is verifying your payment</p>
                   </div>
                </div>
             )}

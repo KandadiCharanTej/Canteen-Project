@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Spinner } from "@/components/Spinner";
@@ -8,35 +8,53 @@ import { useAuth } from "@/context/AuthContext";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrderCard } from "@/components/features/OrderCard";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function Orders() {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const prevOrdersRef = useRef<Order[]>([]);
 
-  const fetchOrders = useCallback(async () => {
-    if (!isLoggedIn) return;
-    try {
-      const data = await ordersApi.getOrders();
-      setOrders(data);
-    } catch {}
-    setLoading(false);
-  }, [isLoggedIn]);
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["orders"],
+    queryFn: () => ordersApi.getOrders(),
+    enabled: isLoggedIn,
+    refetchInterval: 5000, // Smart polling every 5 seconds
+    staleTime: 2000,
+  });
 
   useEffect(() => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: "/orders" } });
       return;
     }
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn, navigate, fetchOrders]);
+  }, [isLoggedIn, navigate]);
+
+  // Handle live notifications
+  useEffect(() => {
+    if (orders.length > 0 && prevOrdersRef.current.length > 0) {
+      const prevMap = new Map(prevOrdersRef.current.map(o => [o.id, o]));
+      
+      orders.forEach(order => {
+        const prev = prevMap.get(order.id);
+        if (prev && prev.status !== order.status) {
+          // Play sound
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+          audio.play().catch(() => {});
+          
+          toast.success(`Order #${order.id} is now ${order.status}!`, {
+            description: "Check your order details for more info."
+          });
+        }
+      });
+    }
+    prevOrdersRef.current = orders;
+  }, [orders]);
 
   if (!isLoggedIn) return null;
   
-  if (loading)
+  if (isLoading)
     return (
       <div className="bg-gray-50 min-h-screen">
         <PageHeader title="My Orders" />

@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { menuApi, ordersApi } from "@/lib/api";
-import { MenuItem, Order, OrderStatus } from "@/lib/types";
-import { Plus, Pencil, Trash2, CheckCircle, KeyRound, ChefHat, ShoppingBag, Search, Ban } from "lucide-react";
+import { menuApi, ordersApi, slotsApi } from "@/lib/api";
+import { MenuItem, Order, OrderStatus, TimeSlot } from "@/lib/types";
+import { Plus, Pencil, Trash2, CheckCircle, KeyRound, ChefHat, ShoppingBag, Search, Ban, Settings, Image as ImageIcon, CheckCircle2, XCircle, Bell, Volume2, VolumeX, Filter, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -35,33 +36,67 @@ const blank: Partial<MenuItem> = {
 
 export default function Admin() {
   const { user, logout } = useAuth();
-  const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [editing, setEditing] = useState<Partial<MenuItem> | null>(null);
+  const [newSlot, setNewSlot] = useState({ slot_time: "", max_orders: 25 });
   const [open, setOpen] = useState(false);
   const [otpInputs, setOtpInputs] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  const queryClient = useQueryClient();
+  const prevOrderCountRef = useRef(0);
 
-  const refresh = useCallback(async () => {
-    try {
-      const [m, o] = await Promise.all([
-        menuApi.getAllMenu(),
-        ordersApi.getOrders(),
-      ]);
-      setMenu(m);
-      setOrders(o);
-    } catch {}
-  }, []);
+  const playNotification = useCallback(() => {
+    if (!soundEnabled) return;
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    audio.play().catch(() => {});
+  }, [soundEnabled]);
+
+  const { data: menu = [] } = useQuery({
+    queryKey: ["admin-menu"],
+    queryFn: () => menuApi.getAllMenu(),
+    refetchInterval: 5000,
+  });
+
+  const { data: slots = [] } = useQuery({
+    queryKey: ["admin-slots"],
+    queryFn: () => slotsApi.getSlots(),
+    refetchInterval: 10000,
+  });
+
+  const { data: orders = [] } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: () => ordersApi.getOrders(),
+    refetchInterval: 3000, // Very fast polling for admin
+  });
 
   useEffect(() => {
-    refresh();
-    const interval = setInterval(refresh, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, [refresh]);
+    const activeNow = orders.filter(x => x.status !== "Completed").length;
+    if (activeNow > prevOrderCountRef.current) {
+      playNotification();
+    }
+    prevOrderCountRef.current = activeNow;
+  }, [orders, playNotification]);
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-menu"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-slots"] });
+  };
 
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
-  const activeOrders = orders.filter(o => o.status !== "Completed");
+  const activeOrders = orders.filter(o => {
+    if (o.status === "Completed") return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      o.id.toString().includes(q) ||
+      o.user_name?.toLowerCase().includes(q) ||
+      o.user_contact?.includes(q)
+    );
+  });
   
   // Group ACTIVE orders by time slot
   const groupedOrders = activeOrders.reduce(
@@ -146,6 +181,27 @@ export default function Admin() {
     }
   };
 
+  const isSlotUrgent = (slotTime: string) => {
+    try {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      const [time, period] = slotTime.split(" ");
+      let [h, m] = time.split(":").map(Number);
+      if (period === "PM" && h !== 12) h += 12;
+      if (period === "AM" && h === 12) h = 0;
+      
+      const slotMinutes = h * 60 + m;
+      const nowMinutes = currentHour * 60 + currentMinute;
+      
+      // Urgent if slot is within 30 mins from now or already passed but still has active orders
+      return slotMinutes <= nowMinutes + 30;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen pb-24 md:pb-12">
       <header className="bg-white border-b border-gray-200 px-4 py-5 sticky top-0 z-50 flex items-center justify-between shadow-sm md:px-8">
@@ -153,7 +209,15 @@ export default function Admin() {
           <Settings className="h-7 w-7 text-primary" /> Admin Console
         </h1>
         <div className="flex items-center gap-4">
-          <span className="hidden md:block text-sm font-bold text-gray-400 uppercase tracking-widest">Logged in as {user?.name}</span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={cn("h-10 w-10 rounded-xl transition-all", soundEnabled ? "text-primary bg-primary/10" : "text-gray-400 bg-gray-100")}
+          >
+            {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </Button>
+          <span className="hidden md:block text-sm font-bold text-gray-400 uppercase tracking-widest">Admin: {user?.name}</span>
           <Button onClick={() => { logout(); }} variant="ghost" className="text-red-600 font-bold hover:bg-red-50">Logout</Button>
         </div>
       </header>
@@ -161,12 +225,15 @@ export default function Admin() {
       <div className="px-4 py-8 md:px-8">
         <Tabs defaultValue="orders" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <TabsList className="grid grid-cols-2 w-full md:w-[400px] bg-white p-1.5 rounded-[1.5rem] shadow-sm h-16 border border-gray-100">
+            <TabsList className="grid grid-cols-3 w-full md:w-[600px] bg-white p-1.5 rounded-[1.5rem] shadow-sm h-16 border border-gray-100">
               <TabsTrigger value="orders" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
                 Live Orders
               </TabsTrigger>
               <TabsTrigger value="menu" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
                 Inventory
+              </TabsTrigger>
+              <TabsTrigger value="slots" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
+                Slots
               </TabsTrigger>
             </TabsList>
             
@@ -237,6 +304,41 @@ export default function Admin() {
 
           {/* ─── ORDERS TAB ─── */}
           <TabsContent value="orders">
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1 relative">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
+                <Input 
+                  placeholder="Order ID, Name or Phone..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-16 pl-14 pr-6 rounded-[1.5rem] border-none shadow-sm text-lg font-bold bg-white focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+              <div className="flex gap-2">
+                 <Button 
+                   variant={searchQuery === "Verification" ? "default" : "outline"}
+                   onClick={() => setSearchQuery(searchQuery === "Verification" ? "" : "Verification")}
+                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                 >
+                   <Filter className="w-4 h-4 mr-2" /> Pending Verification
+                 </Button>
+                 <Button 
+                   variant={searchQuery === "Preparing" ? "default" : "outline"}
+                   onClick={() => setSearchQuery(searchQuery === "Preparing" ? "" : "Preparing")}
+                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                 >
+                   <ChefHat className="w-4 h-4 mr-2" /> To Cook
+                 </Button>
+                 <Button 
+                   variant={searchQuery === "Ready" ? "default" : "outline"}
+                   onClick={() => setSearchQuery(searchQuery === "Ready" ? "" : "Ready")}
+                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                 >
+                   <KeyRound className="w-4 h-4 mr-2" /> To Deliver
+                 </Button>
+              </div>
+            </div>
+
             {activeOrders.length === 0 ? (
               <div className="bg-white rounded-[3rem] p-24 text-center shadow-sm border border-gray-100 mt-4">
                 <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
@@ -250,9 +352,12 @@ export default function Admin() {
                 {Object.entries(groupedOrders).map(([slot, slotOrders]) => (
                   <div key={slot} className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <h3 className="font-black text-2xl text-gray-900 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-                        <Clock className="h-6 w-6 text-primary" /> {slot}
-                        <span className="bg-gray-100 text-gray-400 text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                      <h3 className={cn(
+                        "font-black text-2xl p-4 rounded-3xl shadow-sm border flex items-center gap-4 transition-all duration-500",
+                        isSlotUrgent(slot) ? "bg-primary text-white border-primary animate-pulse" : "bg-white text-gray-900 border-gray-100"
+                      )}>
+                        <Clock className={cn("h-6 w-6", isSlotUrgent(slot) ? "text-white" : "text-primary")} /> {slot}
+                        <span className={cn("text-xs px-3 py-1 rounded-full uppercase tracking-widest", isSlotUrgent(slot) ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400")}>
                           {slotOrders.length} orders
                         </span>
                       </h3>
@@ -278,6 +383,10 @@ export default function Admin() {
                                 <span className="text-[10px] font-black text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
                                   Paid
                                 </span>
+                              ) : o.payment_status === "verification_pending" ? (
+                                <span className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
+                                  Verifying
+                                </span>
                               ) : (
                                 <span className="text-[10px] font-black text-red-700 bg-red-50 border border-red-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
                                   Unpaid
@@ -300,24 +409,43 @@ export default function Admin() {
 
                           {/* Action Center */}
                           <div className="space-y-4">
-                            {o.payment_status !== "paid" && (
-                              <Button
-                                onClick={() => markPaid(o.id)}
-                                className="w-full h-14 text-base font-black bg-green-500 hover:bg-green-600 rounded-2xl shadow-lg transition-all active:scale-95"
-                              >
-                                <CheckCircle className="w-5 h-5 mr-2" /> VERIFY PAYMENT
-                              </Button>
+                            {/* Payment Verification Flow */}
+                            {o.payment_status === "verification_pending" && (
+                              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2">
+                                    <Clock className="w-4 h-4" /> Verify Payment
+                                  </p>
+                                  {o.payment_screenshot && (
+                                    <a 
+                                      href={o.payment_screenshot.startsWith("http") ? o.payment_screenshot : `${window.location.origin}${o.payment_screenshot}`} 
+                                      target="_blank" 
+                                      rel="noreferrer" 
+                                      className="text-[10px] font-black text-primary underline flex items-center gap-1 hover:text-primary/80 transition-colors"
+                                    >
+                                      <ImageIcon className="w-3 h-3" /> View Screenshot
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => markPaid(o.id)}
+                                    className="flex-1 h-12 bg-green-500 hover:bg-green-600 text-white font-black rounded-xl text-sm"
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    onClick={() => updateStatus(o.id, "Cancelled")}
+                                    variant="outline"
+                                    className="flex-1 h-12 border-red-200 text-red-500 hover:bg-red-50 font-black rounded-xl text-sm"
+                                  >
+                                    Reject
+                                  </Button>
+                                </div>
+                              </div>
                             )}
 
-                            {o.status === "Placed" && (
-                              <Button
-                                onClick={() => updateStatus(o.id, "Preparing")}
-                                className="w-full h-14 text-base font-black bg-orange-500 hover:bg-orange-600 rounded-2xl shadow-lg transition-all active:scale-95"
-                              >
-                                <ChefHat className="w-5 h-5 mr-2" /> START PREPARING
-                              </Button>
-                            )}
-
+                            {/* Standard Status Updates */}
                             {o.status === "Preparing" && (
                               <Button
                                 onClick={() => updateStatus(o.id, "Ready")}
@@ -359,6 +487,25 @@ export default function Admin() {
                                   className="w-full mt-4 text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest"
                                 >
                                   Bypass Verification
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Initial Status Action */}
+                            {o.status === "Pending Payment" && (
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={() => markPaid(o.id)}
+                                  className="flex-1 h-14 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-2xl transition-all shadow-lg"
+                                >
+                                  MARK PAID
+                                </Button>
+                                <Button
+                                  onClick={() => updateStatus(o.id, "Cancelled")}
+                                  variant="outline"
+                                  className="h-14 px-6 border-red-200 text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                >
+                                  <XCircle className="w-6 h-6" />
                                 </Button>
                               </div>
                             )}
@@ -416,21 +563,138 @@ export default function Admin() {
                          </span>
                        </div>
                        
-                       <div className="flex gap-2">
-                         {m.available_quantity > 0 ? (
-                           <Button onClick={() => { setEditing({ ...m, available_quantity: 0 }); save(); }} variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-all">
-                             <Ban className="w-5 h-5" />
-                           </Button>
-                         ) : (
-                           <Button onClick={() => { setEditing({ ...m, available_quantity: 20 }); save(); }} variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-green-50 text-green-500 hover:bg-green-100 transition-all">
-                             <Plus className="w-5 h-5" />
-                           </Button>
-                         )}
-                       </div>
+                        <div className="flex gap-2">
+                          {m.available_quantity > 0 ? (
+                            <Button 
+                              onClick={() => { setEditing({ ...m, available_quantity: 0 }); save(); }} 
+                              variant="ghost" 
+                              className="h-12 flex-1 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-black text-xs uppercase tracking-widest"
+                            >
+                              <Ban className="w-4 h-4 mr-2" /> SOLD OUT
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={() => { setEditing({ ...m, available_quantity: 50 }); save(); }} 
+                              variant="ghost" 
+                              className="h-12 flex-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-100 transition-all font-black text-xs uppercase tracking-widest"
+                            >
+                              <Plus className="w-4 h-4 mr-2" /> RESTOCK (50)
+                            </Button>
+                          )}
+                        </div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </TabsContent>
+
+          {/* ─── SLOTS TAB ─── */}
+          <TabsContent value="slots">
+            <div className="max-w-4xl mx-auto mt-8 space-y-8">
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-black flex items-center gap-2">
+                    <Plus className="w-5 h-5" /> Add New Pickup Slot
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={async () => {
+                        const lunchTimes = ["12:00 PM", "12:05 PM", "12:10 PM", "12:15 PM", "12:20 PM", "12:25 PM", "12:30 PM"];
+                        for (const t of lunchTimes) {
+                          try { await slotsApi.createSlot({ slot_time: t, max_orders: 25 }); } catch {}
+                        }
+                        toast.success("Lunch slots added");
+                        refresh();
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest border-blue-100 text-blue-600 hover:bg-blue-50"
+                    >
+                      + LUNCH PRESET
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={async () => {
+                        const breakTimes = ["10:30 AM", "10:35 AM", "10:40 AM", "10:45 AM"];
+                        for (const t of breakTimes) {
+                          try { await slotsApi.createSlot({ slot_time: t, max_orders: 25 }); } catch {}
+                        }
+                        toast.success("Break slots added");
+                        refresh();
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest border-orange-100 text-orange-600 hover:bg-orange-50"
+                    >
+                      + BREAK PRESET
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <Input 
+                      placeholder="e.g. 10:30 AM" 
+                      value={newSlot.slot_time} 
+                      onChange={(e) => setNewSlot({...newSlot, slot_time: e.target.value})}
+                      className="h-14 rounded-xl font-bold"
+                    />
+                  </div>
+                  <div className="w-full sm:w-40">
+                    <Input 
+                      type="number" 
+                      placeholder="Max Orders" 
+                      value={newSlot.max_orders}
+                      onChange={(e) => setNewSlot({...newSlot, max_orders: +e.target.value})}
+                      className="h-14 rounded-xl font-bold"
+                    />
+                  </div>
+                  <Button 
+                    onClick={async () => {
+                      if(!newSlot.slot_time) return toast.error("Time required");
+                      await slotsApi.createSlot(newSlot);
+                      toast.success("Slot added");
+                      setNewSlot({ slot_time: "", max_orders: 25 });
+                      refresh();
+                    }}
+                    className="h-14 px-8 font-black rounded-xl"
+                  >
+                    ADD SLOT
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {slots.sort((a,b) => a.slot_time.localeCompare(b.slot_time)).map(s => (
+                  <div key={s.id} className={cn("bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between", !s.is_active && "bg-gray-50 opacity-70")}>
+                    <div>
+                      <p className="font-black text-lg">{s.slot_time}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.max_orders} max capacity</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={s.is_active} 
+                        onCheckedChange={async () => {
+                          await slotsApi.toggleSlot(s.id);
+                          refresh();
+                        }} 
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={async () => {
+                          if(confirm("Delete slot?")) {
+                            await slotsApi.deleteSlot(s.id);
+                            refresh();
+                          }
+                        }}
+                        className="text-red-400 hover:text-red-600 h-10 w-10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>

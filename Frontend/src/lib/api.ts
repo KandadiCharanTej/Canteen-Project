@@ -11,7 +11,7 @@ import type {
 
 // ─────────── Axios Instance ───────────
 const http = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -146,6 +146,20 @@ export const slotsApi = {
     const res = await http.get<TimeSlot[]>("/slots");
     return res.data;
   },
+
+  async createSlot(data: { slot_time: string; max_orders: number }): Promise<TimeSlot> {
+    const res = await http.post<TimeSlot>("/slots", data);
+    return res.data;
+  },
+
+  async deleteSlot(id: number): Promise<void> {
+    await http.delete(`/slots/${id}`);
+  },
+
+  async toggleSlot(id: number): Promise<{ is_active: boolean }> {
+    const res = await http.put<{ is_active: boolean }>(`/slots/${id}/toggle`);
+    return res.data;
+  },
 };
 
 // ─────────── Orders API ───────────
@@ -182,6 +196,15 @@ export const ordersApi = {
 
   async markSelfPaid(orderId: number): Promise<void> {
     await http.post(`/orders/${orderId}/mark-paid`);
+  },
+
+  async uploadScreenshot(orderId: number, file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await http.post<{ url: string }>(`/orders/${orderId}/screenshot`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
   },
 
   async verifyOTP(orderId: number, otp: string): Promise<void> {

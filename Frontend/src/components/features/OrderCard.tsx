@@ -3,7 +3,7 @@ import { KeyRound, Copy, CheckCircle2, Clock, ChefHat, ShoppingBag } from "lucid
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const STAGES: OrderStatus[] = ["Placed", "Preparing", "Ready", "Completed"];
+const STAGES: OrderStatus[] = ["Pending Payment", "Payment Verification", "Preparing", "Ready", "Completed"];
 
 interface Props {
   order: Order;
@@ -14,7 +14,8 @@ export function OrderCard({ order: o, isPast = false }: Props) {
   const stageIdx = STAGES.indexOf(o.status);
   
   const getStageIcon = () => {
-    if (o.status === "Placed") return <Clock className="h-5 w-5 text-blue-500" />;
+    if (o.status === "Pending Payment") return <ReceiptText className="h-5 w-5 text-gray-500" />;
+    if (o.status === "Payment Verification") return <Clock className="h-5 w-5 text-blue-500" />;
     if (o.status === "Preparing") return <ChefHat className="h-5 w-5 text-orange-500" />;
     if (o.status === "Ready") return <ShoppingBag className="h-5 w-5 text-green-500" />;
     return <CheckCircle2 className="h-5 w-5 text-gray-500" />;
@@ -104,7 +105,7 @@ export function OrderCard({ order: o, isPast = false }: Props) {
           {/* Timeline UI */}
           <div className="px-2">
             <div className="flex items-center justify-between mb-3">
-              {STAGES.slice(0, 3).map((stage, idx) => {
+              {STAGES.slice(0, 4).map((stage, idx) => {
                 const isActive = idx <= stageIdx;
                 const isCurrent = idx === stageIdx;
                 return (
@@ -122,14 +123,15 @@ export function OrderCard({ order: o, isPast = false }: Props) {
             <div className="relative h-2 bg-gray-200 rounded-full mb-4">
                <div 
                  className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-1000 ease-out" 
-                 style={{ width: `${(stageIdx / 2) * 100}%` }}
+                 style={{ width: `${(stageIdx / 3) * 100}%` }}
                />
             </div>
             
-            <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-gray-400">
-              <span className={cn(stageIdx >= 0 && "text-primary")}>Placed</span>
-              <span className={cn(stageIdx >= 1 && "text-primary")}>Preparing</span>
-              <span className={cn(stageIdx >= 2 && "text-primary")}>Ready</span>
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+              <span className={cn(stageIdx >= 0 && "text-primary")}>Pending</span>
+              <span className={cn(stageIdx >= 1 && "text-primary text-center w-20")}>Verifying</span>
+              <span className={cn(stageIdx >= 2 && "text-primary text-center w-20")}>Preparing</span>
+              <span className={cn(stageIdx >= 3 && "text-primary text-right")}>Ready</span>
             </div>
           </div>
         </div>

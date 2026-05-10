@@ -41,8 +41,8 @@ export interface TimeSlot {
   is_active: boolean;
 }
 
-export type OrderStatus = "Placed" | "Preparing" | "Ready" | "Completed";
-export type PaymentStatus = "pending" | "paid";
+export type OrderStatus = "Pending Payment" | "Payment Verification" | "Preparing" | "Ready" | "Completed" | "Cancelled";
+export type PaymentStatus = "pending" | "verification_pending" | "paid" | "failed";
 
 export interface OrderItem {
   id: number;
@@ -59,6 +59,7 @@ export interface Order {
   status: OrderStatus;
   payment_status: PaymentStatus;
   payment_method: string;
+  payment_screenshot?: string | null;
   time_slot: string;
   otp?: string | null;
   created_at: string;

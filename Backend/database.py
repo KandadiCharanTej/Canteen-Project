@@ -1,21 +1,31 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
+from config import settings
+import redis
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./canteen.db"
-
+# SQLAlchemy PostgreSQL Engine with Connection Pooling
+# pool_size: number of persistent connections
+# max_overflow: max additional connections during peak load
+# pool_pre_ping: test connection before using it (robustness)
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    settings.database_url,
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_recycle=3600,
 )
-
-# Enable WAL mode for better concurrency with SQLite
-@event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA busy_timeout=5000")
-    cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+# Redis Client for Caching
+redis_client = redis.from_url(settings.redis_connection_url, decode_responses=True)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
