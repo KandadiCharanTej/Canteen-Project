@@ -22,6 +22,8 @@ export interface MenuItem {
   description?: string | null;
   is_active: boolean;
   is_best: boolean;
+  is_trending?: boolean;
+  prep_time?: number;
   date: string;
 }
 
