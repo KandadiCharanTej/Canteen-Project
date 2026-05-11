@@ -4,13 +4,14 @@ import { User } from "@/lib/types";
 
 interface AuthCtx {
   user: User | null;
-  sendOTP: (contact: string) => Promise<any>;
-  verifyOTP: (contact: string, otp: string) => Promise<{ is_registered: boolean }>;
+  login: (contact: string, aurora_uid?: string) => Promise<User>;
   signup: (data: {
     name: string;
+    email?: string;
     contact: string;
     category?: string;
     student_class?: string;
+    aurora_uid?: string;
   }) => Promise<User>;
   logout: () => void;
   loading: boolean;
@@ -35,23 +36,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const sendOTP = async (contact: string) => {
-    return await authApi.sendOTP(contact);
-  };
-
-  const verifyOTP = async (contact: string, otp: string) => {
-    const res = await authApi.verifyOTP(contact, otp);
-    if (res.is_registered && res.user) {
-      setUser(res.user);
-    }
-    return { is_registered: res.is_registered };
+  const login = async (contact: string, aurora_uid?: string) => {
+    const res = await authApi.login(contact, aurora_uid);
+    setUser(res.user);
+    return res.user;
   };
 
   const signup = async (data: {
     name: string;
+    email?: string;
     contact: string;
     category?: string;
     student_class?: string;
+    aurora_uid?: string;
   }) => {
     const res = await authApi.signup(data);
     setUser(res.user);
@@ -65,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, sendOTP, verifyOTP, signup, logout, loading, isLoggedIn: !!user }}
+      value={{ user, login, signup, logout, loading, isLoggedIn: !!user }}
     >
       {children}
     </AuthContext.Provider>

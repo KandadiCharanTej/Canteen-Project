@@ -9,11 +9,12 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    email = Column(String, unique=True, index=True, nullable=True)
     contact = Column(String, unique=True, index=True, nullable=False)
     role = Column(String, default="student", index=True)  # student, lecturer, admin
     category = Column(String, default="Student")
     student_class = Column(String, nullable=True)
-    hashed_password = Column(String)
+    aurora_uid = Column(String, unique=True, index=True, nullable=True)
     profile_image = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -65,6 +66,7 @@ class Order(Base):
     upi_ref = Column(String, nullable=True, index=True)
     payment_screenshot = Column(String, nullable=True)
     time_slot = Column(String, index=True)
+    special_instructions = Column(String, nullable=True)
     otp = Column(String, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 

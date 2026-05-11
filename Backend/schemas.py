@@ -5,9 +5,15 @@ import datetime
 # ──────────── Auth ────────────
 class UserCreate(BaseModel):
     name: str
+    email: Optional[str] = None
     contact: str
     category: str = "Student"
     student_class: Optional[str] = None
+    aurora_uid: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    contact: str
+    aurora_uid: Optional[str] = None
 
 class OTPSend(BaseModel):
     contact: str
@@ -19,10 +25,12 @@ class OTPVerifyAuth(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
+    email: Optional[str] = None
     contact: str
     role: str
     category: str
     student_class: Optional[str] = None
+    aurora_uid: Optional[str] = None
     profile_image: Optional[str] = None
     created_at: datetime.datetime
     model_config = ConfigDict(from_attributes=True)
@@ -97,6 +105,7 @@ class OrderItemOut(BaseModel):
 
 class OrderCreate(BaseModel):
     time_slot: str
+    special_instructions: Optional[str] = None
     items: List[OrderItemCreate]
 
 class OrderOut(BaseModel):
@@ -108,6 +117,7 @@ class OrderOut(BaseModel):
     payment_method: str
     payment_screenshot: Optional[str] = None
     time_slot: str
+    special_instructions: Optional[str] = None
     otp: Optional[str] = None
     created_at: datetime.datetime
     items: List[OrderItemOut]

@@ -10,62 +10,29 @@ from config import settings
 
 router = APIRouter()
 
-@router.post("/send-otp")
-def send_otp(data: schemas.OTPSend, db: Session = Depends(get_db)):
-    # Rate Limiting: Prevent OTP abuse
-    recent_otps = db.query(models.UserOTP).filter(
-        models.UserOTP.contact == data.contact,
-        models.UserOTP.created_at > datetime.utcnow() - timedelta(minutes=5)
-    ).count()
-    
-    if recent_otps >= 3:
-        raise HTTPException(status_code=429, detail="Too many requests. Please wait 5 minutes.")
-
-    # In production, integrate with SMS gateway like Twilio
-    otp = str(random.randint(1000, 9999))
-    expires_at = datetime.utcnow() + timedelta(minutes=10)
-    
-    db_otp = models.UserOTP(
-        contact=data.contact,
-        otp=otp,
-        expires_at=expires_at
-    )
-    db.add(db_otp)
-    db.commit()
-    
-    # For demo/dev purposes, return OTP in response (REMOVE IN PRODUCTION)
-    return {"message": "OTP sent successfully", "otp": otp}
-
-@router.post("/verify-otp")
-def verify_otp(data: schemas.OTPVerifyAuth, db: Session = Depends(get_db)):
-    db_otp = db.query(models.UserOTP).filter(
-        models.UserOTP.contact == data.contact,
-        models.UserOTP.otp == data.otp,
-        models.UserOTP.is_used == False,
-        models.UserOTP.expires_at > datetime.utcnow()
-    ).order_by(models.UserOTP.created_at.desc()).first()
-    
-    if not db_otp:
-        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-    
-    db_otp.is_used = True
-    db.commit()
-    
+# Direct login/signup flow (No OTP)
+@router.post("/login", response_model=schemas.AuthResponse)
+def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.contact == data.contact).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found. Please register.")
     
-    return {
-        "is_registered": user is not None,
-        "access_token": security.create_access_token(user.id) if user else None,
-        "user": user
-    }
+    # Optional: Verify Aurora UID if user has one
+    if user.aurora_uid and data.aurora_uid and user.aurora_uid != data.aurora_uid:
+        raise HTTPException(status_code=400, detail="Invalid Aurora UID for this account.")
+        
+    token = security.create_access_token(user.id)
+    return {"access_token": token, "token_type": "bearer", "user": user}
 
 @router.post("/signup", response_model=schemas.AuthResponse)
 def signup(data: schemas.UserCreate, db: Session = Depends(get_db)):
+    # Check if user already exists
     existing_user = db.query(models.User).filter(models.User.contact == data.contact).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="User already registered")
+        # Just log them in
+        return login(schemas.LoginRequest(contact=data.contact, aurora_uid=data.aurora_uid), db)
     
-    # Check admin whitelist
+    # Determine role (Admin whitelist)
     role = "student"
     whitelist = db.query(models.AdminWhitelist).filter(models.AdminWhitelist.contact == data.contact).first()
     if whitelist:
@@ -73,9 +40,11 @@ def signup(data: schemas.UserCreate, db: Session = Depends(get_db)):
         
     db_user = models.User(
         name=data.name,
+        email=data.email,
         contact=data.contact,
         category=data.category,
         student_class=data.student_class,
+        aurora_uid=data.aurora_uid,
         role=role
     )
     db.add(db_user)

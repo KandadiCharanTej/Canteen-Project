@@ -24,20 +24,20 @@ db.add_all(whitelists)
 # ─── Users ───
 admin = models.User(
     name="Canteen Manager", contact="9876543210", role="admin",
-    category="Admin", hashed_password="OTP_AUTH"
+    category="Admin", email="manager@canteen.com", aurora_uid="ADM001"
 )
 admin2 = models.User(
     name="Kitchen Head", contact="1234567890", role="admin",
-    category="Admin", hashed_password="OTP_AUTH"
+    category="Admin", email="kitchen@canteen.com", aurora_uid="ADM002"
 )
 student = models.User(
     name="Charan Tej", contact="9999999999", role="student",
     category="Student", student_class="CSE-A 2nd Year",
-    hashed_password="OTP_AUTH"
+    email="charan@example.com", aurora_uid="AUR123"
 )
 lecturer = models.User(
     name="Dr. Ramesh", contact="8888888888", role="student",
-    category="Lecturer", hashed_password="OTP_AUTH"
+    category="Lecturer", email="ramesh@university.edu", aurora_uid="AUR888"
 )
 
 db.add_all([admin, admin2, student, lecturer])

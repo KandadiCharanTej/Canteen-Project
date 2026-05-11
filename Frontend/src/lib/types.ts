@@ -3,10 +3,12 @@ export type Role = "student" | "lecturer" | "admin";
 export interface User {
   id: number;
   name: string;
+  email?: string | null;
   contact: string;
   role: Role;
   category: string;
   student_class?: string | null;
+  aurora_uid?: string | null;
   profile_image?: string | null;
   created_at: string;
 }
@@ -32,6 +34,7 @@ export interface CartItem {
   name: string;
   price: number;
   qty: number;
+  veg_flag: boolean;
   image_url?: string | null;
 }
 

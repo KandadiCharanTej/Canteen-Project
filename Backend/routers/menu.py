@@ -20,9 +20,10 @@ def get_menu(
 ):
     # Try to get from cache if no filters
     cache_key = f"menu:all:{veg_only}:{category}"
-    cached_menu = cache.get(cache_key)
-    if cached_menu:
-        return json.loads(cached_menu)
+    if cache:
+        cached_menu = cache.get(cache_key)
+        if cached_menu:
+            return json.loads(cached_menu)
 
     query = db.query(models.Menu).filter(models.Menu.is_active == True)
     if category:
@@ -33,7 +34,8 @@ def get_menu(
     menu = query.all()
     
     # Store in cache
-    cache.setex(cache_key, CACHE_EXPIRE, json.dumps([schemas.MenuOut.model_validate(m).model_dump() for m in menu], default=str))
+    if cache:
+        cache.setex(cache_key, CACHE_EXPIRE, json.dumps([schemas.MenuOut.model_validate(m).model_dump() for m in menu], default=str))
     
     return menu
 
@@ -57,9 +59,10 @@ def create_menu_item(
     db.refresh(db_item)
     
     # Invalidate menu cache
-    keys = cache.keys("menu:all:*")
-    if keys:
-        cache.delete(*keys)
+    if cache:
+        keys = cache.keys("menu:all:*")
+        if keys:
+            cache.delete(*keys)
         
     return db_item
 
@@ -82,9 +85,10 @@ def update_menu_item(
     db.refresh(db_item)
     
     # Invalidate menu cache
-    keys = cache.keys("menu:all:*")
-    if keys:
-        cache.delete(*keys)
+    if cache:
+        keys = cache.keys("menu:all:*")
+        if keys:
+            cache.delete(*keys)
         
     return db_item
 
@@ -103,8 +107,9 @@ def delete_menu_item(
     db.commit()
     
     # Invalidate menu cache
-    keys = cache.keys("menu:all:*")
-    if keys:
-        cache.delete(*keys)
+    if cache:
+        keys = cache.keys("menu:all:*")
+        if keys:
+            cache.delete(*keys)
         
     return {"detail": "Item deleted"}

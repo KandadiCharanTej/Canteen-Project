@@ -1,37 +1,21 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { menuApi, ordersApi, slotsApi } from "@/lib/api";
-import { MenuItem, Order, OrderStatus, TimeSlot } from "@/lib/types";
-import { Plus, Pencil, Trash2, CheckCircle, KeyRound, ChefHat, ShoppingBag, Search, Ban, Settings, Image as ImageIcon, CheckCircle2, XCircle, Bell, Volume2, VolumeX, Filter, Trash } from "lucide-react";
+import { MenuItem, Order, OrderStatus } from "@/lib/types";
+import { Plus, Pencil, Trash2, CheckCircle2, KeyRound, ChefHat, ShoppingBag, Search, Ban, Clock, Volume2, VolumeX, Filter, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const blank: Partial<MenuItem> = {
-  name: "",
-  price: 0,
-  category: "Snacks",
-  available_quantity: 0,
-  is_active: true,
-  veg_flag: true,
-  is_best: false,
-  image_url: "",
-  description: "",
+  name: "", price: 0, category: "Snacks", available_quantity: 0, is_active: true, veg_flag: true, image_url: ""
 };
 
 export default function Admin() {
@@ -53,29 +37,13 @@ export default function Admin() {
     audio.play().catch(() => {});
   }, [soundEnabled]);
 
-  const { data: menu = [] } = useQuery({
-    queryKey: ["admin-menu"],
-    queryFn: () => menuApi.getAllMenu(),
-    refetchInterval: 5000,
-  });
-
-  const { data: slots = [] } = useQuery({
-    queryKey: ["admin-slots"],
-    queryFn: () => slotsApi.getSlots(),
-    refetchInterval: 10000,
-  });
-
-  const { data: orders = [] } = useQuery({
-    queryKey: ["admin-orders"],
-    queryFn: () => ordersApi.getOrders(),
-    refetchInterval: 3000, // Very fast polling for admin
-  });
+  const { data: menu = [] } = useQuery({ queryKey: ["admin-menu"], queryFn: () => menuApi.getAllMenu(), refetchInterval: 5000 });
+  const { data: slots = [] } = useQuery({ queryKey: ["admin-slots"], queryFn: () => slotsApi.getSlots(), refetchInterval: 10000 });
+  const { data: orders = [] } = useQuery({ queryKey: ["admin-orders"], queryFn: () => ordersApi.getOrders(), refetchInterval: 3000 });
 
   useEffect(() => {
     const activeNow = orders.filter(x => x.status !== "Completed").length;
-    if (activeNow > prevOrderCountRef.current) {
-      playNotification();
-    }
+    if (activeNow > prevOrderCountRef.current) playNotification();
     prevOrderCountRef.current = activeNow;
   }, [orders, playNotification]);
 
@@ -91,424 +59,225 @@ export default function Admin() {
     if (o.status === "Completed") return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      o.id.toString().includes(q) ||
-      o.user_name?.toLowerCase().includes(q) ||
-      o.user_contact?.includes(q)
-    );
+    return o.id.toString().includes(q) || o.user_name?.toLowerCase().includes(q) || o.user_contact?.includes(q) || o.status.toLowerCase().includes(q);
   });
   
-  // Group ACTIVE orders by time slot
-  const groupedOrders = activeOrders.reduce(
-    (acc, order) => {
-      acc[order.time_slot] = acc[order.time_slot] || [];
-      acc[order.time_slot].push(order);
-      return acc;
-    },
-    {} as Record<string, Order[]>
-  );
+  const groupedOrders = activeOrders.reduce((acc, order) => {
+    acc[order.time_slot] = acc[order.time_slot] || [];
+    acc[order.time_slot].push(order);
+    return acc;
+  }, {} as Record<string, Order[]>);
 
   const save = async () => {
-    if (!editing) return;
-    if (!editing.name?.trim()) return toast.error("Name required");
+    if (!editing?.name?.trim()) return toast.error("Name required");
     setSaving(true);
     try {
-      if (editing.id) {
-        await menuApi.updateItem(editing.id, editing);
-      } else {
-        await menuApi.createItem(editing as any);
-      }
+      if (editing.id) await menuApi.updateItem(editing.id, editing);
+      else await menuApi.createItem(editing as any);
       toast.success("Item saved");
-      setOpen(false);
-      setEditing(null);
-      refresh();
+      setOpen(false); setEditing(null); refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to save");
+      toast.error("Failed to save");
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleActive = async (item: MenuItem) => {
-    await menuApi.updateItem(item.id, { is_active: !item.is_active });
-    refresh();
-  };
-
-  const remove = async (id: number) => {
-    if (!confirm("Delete this item?")) return;
-    await menuApi.deleteItem(id);
-    toast.success("Item deleted");
-    refresh();
-  };
-
   const updateStatus = async (id: number, status: OrderStatus) => {
-    try {
-      await ordersApi.updateStatus(id, status);
-      toast.success(`Order updated to ${status}`);
-      refresh();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to update");
-    }
+    try { await ordersApi.updateStatus(id, status); toast.success(`Order ${status}`); refresh(); } 
+    catch { toast.error("Failed to update"); }
   };
 
   const markPaid = async (id: number) => {
-    try {
-      await ordersApi.updatePayment(id, "paid");
-      toast.success("Marked as paid");
-      refresh();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to update");
-    }
+    try { await ordersApi.updatePayment(id, "paid"); toast.success("Paid"); refresh(); } 
+    catch { toast.error("Failed to update"); }
   };
 
   const verifyOTP = async (orderId: number) => {
     const otp = otpInputs[orderId];
-    if (!otp || otp.length !== 4) {
-      toast.error("Enter 4-digit OTP");
-      return;
-    }
+    if (!otp || otp.length !== 4) return toast.error("Enter 4-digit OTP");
     try {
       await ordersApi.verifyOTP(orderId, otp);
-      toast.success("OTP verified! Order completed.");
-      setOtpInputs((prev) => {
-        const n = { ...prev };
-        delete n[orderId];
-        return n;
-      });
+      toast.success("Order completed.");
+      setOtpInputs(prev => { const n = { ...prev }; delete n[orderId]; return n; });
       refresh();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Invalid OTP");
-    }
-  };
-
-  const isSlotUrgent = (slotTime: string) => {
-    try {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      
-      const [time, period] = slotTime.split(" ");
-      let [h, m] = time.split(":").map(Number);
-      if (period === "PM" && h !== 12) h += 12;
-      if (period === "AM" && h === 12) h = 0;
-      
-      const slotMinutes = h * 60 + m;
-      const nowMinutes = currentHour * 60 + currentMinute;
-      
-      // Urgent if slot is within 30 mins from now or already passed but still has active orders
-      return slotMinutes <= nowMinutes + 30;
-    } catch {
-      return false;
-    }
+    } catch { toast.error("Invalid OTP"); }
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen pb-24 md:pb-12">
-      <header className="bg-white border-b border-gray-200 px-4 py-5 sticky top-0 z-50 flex items-center justify-between shadow-sm md:px-8">
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-          <Settings className="h-7 w-7 text-primary" /> Admin Console
-        </h1>
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className={cn("h-10 w-10 rounded-xl transition-all", soundEnabled ? "text-primary bg-primary/10" : "text-gray-400 bg-gray-100")}
-          >
-            {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-          </Button>
-          <span className="hidden md:block text-sm font-bold text-gray-400 uppercase tracking-widest">Admin: {user?.name}</span>
-          <Button onClick={() => { logout(); }} variant="ghost" className="text-red-600 font-bold hover:bg-red-50">Logout</Button>
+    <div className="bg-[#f8f9fa] min-h-screen pb-12">
+      <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-50 flex items-center justify-between shadow-sm">
+        <h1 className="text-[18px] font-black text-gray-900 tracking-tight">Admin Console</h1>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg">
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
+          <button onClick={logout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-1 text-[12px] font-bold">
+            <LogOut className="h-4 w-4" /> Logout
+          </button>
         </div>
       </header>
 
-      <div className="px-4 py-8 md:px-8">
+      <div className="px-3 py-4 max-w-5xl mx-auto">
         <Tabs defaultValue="orders" className="w-full">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <TabsList className="grid grid-cols-3 w-full md:w-[600px] bg-white p-1.5 rounded-[1.5rem] shadow-sm h-16 border border-gray-100">
-              <TabsTrigger value="orders" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
-                Live Orders
-              </TabsTrigger>
-              <TabsTrigger value="menu" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
-                Inventory
-              </TabsTrigger>
-              <TabsTrigger value="slots" className="text-lg font-black rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300">
-                Slots
-              </TabsTrigger>
-            </TabsList>
+          <TabsList className="flex gap-1 w-full bg-white p-1 rounded-xl shadow-sm border border-gray-100 mb-6">
+            <TabsTrigger value="orders" className="flex-1 text-[12px] font-bold rounded-lg py-2 data-[state=active]:bg-primary data-[state=active]:text-white">Active Orders</TabsTrigger>
+            <TabsTrigger value="menu" className="flex-1 text-[12px] font-bold rounded-lg py-2 data-[state=active]:bg-primary data-[state=active]:text-white">Food Items</TabsTrigger>
+            <TabsTrigger value="slots" className="flex-1 text-[12px] font-bold rounded-lg py-2 data-[state=active]:bg-primary data-[state=active]:text-white">Timings</TabsTrigger>
+          </TabsList>
             
-            <TabsContent value="menu" className="mt-0">
-               <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setEditing({ ...blank })} className="h-16 px-10 text-lg font-black bg-gray-900 hover:bg-black rounded-2xl shadow-xl transition-all active:scale-95 flex items-center gap-3">
-                    <Plus className="w-6 h-6" /> ADD NEW ITEM
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-[2.5rem] p-8 sm:max-w-xl border-none shadow-2xl">
-                  <DialogHeader className="mb-6">
-                    <DialogTitle className="text-3xl font-black text-gray-900">{editing?.id ? "Edit Dish" : "Create Dish"}</DialogTitle>
-                  </DialogHeader>
-                  {editing && (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="font-black text-gray-400 uppercase tracking-widest text-xs ml-1">Dish Name</Label>
-                        <Input value={editing.name || ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="h-14 rounded-2xl text-lg font-bold bg-gray-50 border-2 border-transparent focus:border-primary/20 transition-all" placeholder="e.g. Special Chicken Biryani" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="font-black text-gray-400 uppercase tracking-widest text-xs ml-1">Price (₹)</Label>
-                          <Input type="number" value={editing.price || 0} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} className="h-14 rounded-2xl text-lg font-bold bg-gray-50 border-2 border-transparent focus:border-primary/20 transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="font-black text-gray-400 uppercase tracking-widest text-xs ml-1">Stock Qty</Label>
-                          <Input type="number" value={editing.available_quantity || 0} onChange={(e) => setEditing({ ...editing, available_quantity: +e.target.value })} className="h-14 rounded-2xl text-lg font-bold bg-gray-50 border-2 border-transparent focus:border-primary/20 transition-all" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="font-black text-gray-400 uppercase tracking-widest text-xs ml-1">Category</Label>
-                        <Input value={editing.category || ""} onChange={(e) => setEditing({ ...editing, category: e.target.value })} className="h-14 rounded-2xl text-lg font-bold bg-gray-50 border-2 border-transparent focus:border-primary/20 transition-all" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 p-5 bg-gray-50 rounded-[1.5rem] border border-gray-100">
-                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                          <Label className="font-black text-sm cursor-pointer">Active</Label>
-                          <Switch checked={editing.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                          <Label className="font-black text-sm cursor-pointer text-green-700">Veg</Label>
-                          <Switch checked={editing.veg_flag ?? true} onCheckedChange={(v) => setEditing({ ...editing, veg_flag: v })} />
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                          <Label className="font-black text-sm cursor-pointer text-orange-500">Trending</Label>
-                          <Switch checked={editing.is_trending ?? false} onCheckedChange={(v) => setEditing({ ...editing, is_trending: v })} />
-                        </div>
-                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                          <Label className="font-black text-sm cursor-pointer text-yellow-600">Best</Label>
-                          <Switch checked={editing.is_best ?? false} onCheckedChange={(v) => setEditing({ ...editing, is_best: v })} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="font-black text-gray-400 uppercase tracking-widest text-xs ml-1">Prep Time (mins)</Label>
-                        <Input type="number" value={editing.prep_time || 0} onChange={(e) => setEditing({ ...editing, prep_time: +e.target.value })} className="h-14 rounded-2xl text-lg font-bold bg-gray-50 border-2 border-transparent focus:border-primary/20 transition-all" />
-                      </div>
-                    </div>
-                  )}
-                  <DialogFooter className="mt-10">
-                    <Button onClick={save} disabled={saving} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl">
-                      {saving ? "SAVING..." : "SAVE CHANGES"}
+          <TabsContent value="menu" className="mt-0 outline-none">
+             <div className="flex justify-between items-center mb-4">
+                <h2 className="text-[16px] font-black text-gray-900">Manage Food</h2>
+                <Dialog open={open} onOpenChange={setOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => setEditing({ ...blank })} className="h-9 px-4 text-[12px] font-bold rounded-lg bg-gray-900">
+                      <Plus className="w-4 h-4 mr-1" /> Add Item
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </TabsContent>
-          </div>
+                  </DialogTrigger>
+                  <DialogContent className="rounded-2xl p-6 sm:max-w-md border-gray-100 shadow-xl">
+                    <DialogHeader><DialogTitle className="text-[18px] font-black">{editing?.id ? "Edit Dish" : "Create Dish"}</DialogTitle></DialogHeader>
+                    {editing && (
+                      <div className="space-y-4 mt-2">
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase text-gray-500">Dish Name</Label>
+                          <Input value={editing.name || ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="h-10 text-[13px] font-medium" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-[11px] font-bold uppercase text-gray-500">Price (₹)</Label>
+                            <Input type="number" value={editing.price || 0} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} className="h-10 text-[13px] font-medium" />
+                          </div>
+                          <div>
+                            <Label className="text-[11px] font-bold uppercase text-gray-500">Stock Qty</Label>
+                            <Input type="number" value={editing.available_quantity || 0} onChange={(e) => setEditing({ ...editing, available_quantity: +e.target.value })} className="h-10 text-[13px] font-medium" />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase text-gray-500">Category</Label>
+                          <Input value={editing.category || ""} onChange={(e) => setEditing({ ...editing, category: e.target.value })} className="h-10 text-[13px] font-medium" />
+                        </div>
+                        <div className="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                          <label className="flex items-center gap-2 text-[12px] font-bold"><Switch checked={editing.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /> Active</label>
+                          <label className="flex items-center gap-2 text-[12px] font-bold"><Switch checked={editing.veg_flag ?? true} onCheckedChange={(v) => setEditing({ ...editing, veg_flag: v })} /> Veg</label>
+                        </div>
+                      </div>
+                    )}
+                    <DialogFooter className="mt-6">
+                      <Button onClick={save} disabled={saving} className="w-full h-10 text-[13px] font-bold rounded-lg">{saving ? "Saving..." : "Save Changes"}</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+             </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+              {menu.map((m) => (
+                <div key={m.id} className={cn("bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3", !m.is_active && "opacity-50")}>
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <h4 className="font-bold text-[14px] text-gray-900">{m.name}</h4>
+                       <p className="font-bold text-[13px] text-primary">₹{m.price}</p>
+                     </div>
+                     <button onClick={() => { setEditing(m); setOpen(true); }} className="p-1.5 bg-gray-50 hover:bg-gray-100 rounded-md"><Pencil className="w-3.5 h-3.5" /></button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-auto bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                     <div className="flex flex-col">
+                       <span className="text-[9px] font-bold text-gray-400 uppercase">Stock</span>
+                       <span className={cn("text-[13px] font-black", m.available_quantity > 0 ? "text-green-600" : "text-red-600")}>{m.available_quantity}</span>
+                     </div>
+                     
+                     {m.available_quantity > 0 ? (
+                        <button onClick={() => { setEditing({ ...m, available_quantity: 0 }); save(); }} className="px-3 py-1.5 rounded-md bg-red-50 text-red-600 font-bold text-[10px] uppercase">Sold Out</button>
+                      ) : (
+                        <button onClick={() => { setEditing({ ...m, available_quantity: 50 }); save(); }} className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 font-bold text-[10px] uppercase">Restock</button>
+                      )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
 
           {/* ─── ORDERS TAB ─── */}
           <TabsContent value="orders">
-            <div className="flex flex-col md:flex-row gap-4 mb-8">
-              <div className="flex-1 relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
-                <Input 
-                  placeholder="Order ID, Name or Phone..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-16 pl-14 pr-6 rounded-[1.5rem] border-none shadow-sm text-lg font-bold bg-white focus:ring-2 focus:ring-primary/20 transition-all"
-                />
-              </div>
-              <div className="flex gap-2">
-                 <Button 
-                   variant={searchQuery === "Verification" ? "default" : "outline"}
-                   onClick={() => setSearchQuery(searchQuery === "Verification" ? "" : "Verification")}
-                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
-                 >
-                   <Filter className="w-4 h-4 mr-2" /> Pending Verification
-                 </Button>
-                 <Button 
-                   variant={searchQuery === "Preparing" ? "default" : "outline"}
-                   onClick={() => setSearchQuery(searchQuery === "Preparing" ? "" : "Preparing")}
-                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
-                 >
-                   <ChefHat className="w-4 h-4 mr-2" /> To Cook
-                 </Button>
-                 <Button 
-                   variant={searchQuery === "Ready" ? "default" : "outline"}
-                   onClick={() => setSearchQuery(searchQuery === "Ready" ? "" : "Ready")}
-                   className="h-16 px-6 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
-                 >
-                   <KeyRound className="w-4 h-4 mr-2" /> To Deliver
-                 </Button>
-              </div>
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+              <button onClick={() => setSearchQuery("")} className={cn("px-4 py-2 rounded-lg font-bold text-[12px] whitespace-nowrap", !searchQuery ? "bg-gray-900 text-white" : "bg-white border border-gray-200")}>All</button>
+              <button onClick={() => setSearchQuery("verification_pending")} className={cn("px-4 py-2 rounded-lg font-bold text-[12px] whitespace-nowrap flex items-center gap-1", searchQuery === "verification_pending" ? "bg-blue-600 text-white" : "bg-white border border-gray-200")}><Filter className="w-3.5 h-3.5" /> Verify</button>
+              <button onClick={() => setSearchQuery("preparing")} className={cn("px-4 py-2 rounded-lg font-bold text-[12px] whitespace-nowrap flex items-center gap-1", searchQuery === "preparing" ? "bg-orange-600 text-white" : "bg-white border border-gray-200")}><ChefHat className="w-3.5 h-3.5" /> Prep</button>
+              <button onClick={() => setSearchQuery("ready")} className={cn("px-4 py-2 rounded-lg font-bold text-[12px] whitespace-nowrap flex items-center gap-1", searchQuery === "ready" ? "bg-green-600 text-white" : "bg-white border border-gray-200")}><KeyRound className="w-3.5 h-3.5" /> Delivery</button>
             </div>
 
             {activeOrders.length === 0 ? (
-              <div className="bg-white rounded-[3rem] p-24 text-center shadow-sm border border-gray-100 mt-4">
-                <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                  <ShoppingBag className="w-16 h-16 text-gray-200" />
-                </div>
-                <h3 className="text-3xl font-black text-gray-900 mb-2">No live orders</h3>
-                <p className="text-gray-400 font-medium text-lg">Your dashboard is currently empty.</p>
-              </div>
+              <p className="text-[13px] text-gray-500 font-medium text-center py-10 bg-white rounded-xl border border-gray-100">No active orders</p>
             ) : (
-              <div className="space-y-12">
+              <div className="space-y-6">
                 {Object.entries(groupedOrders).map(([slot, slotOrders]) => (
-                  <div key={slot} className="space-y-6">
-                    <div className="flex items-center gap-4">
-                      <h3 className={cn(
-                        "font-black text-2xl p-4 rounded-3xl shadow-sm border flex items-center gap-4 transition-all duration-500",
-                        isSlotUrgent(slot) ? "bg-primary text-white border-primary animate-pulse" : "bg-white text-gray-900 border-gray-100"
-                      )}>
-                        <Clock className={cn("h-6 w-6", isSlotUrgent(slot) ? "text-white" : "text-primary")} /> {slot}
-                        <span className={cn("text-xs px-3 py-1 rounded-full uppercase tracking-widest", isSlotUrgent(slot) ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400")}>
-                          {slotOrders.length} orders
-                        </span>
-                      </h3>
-                      <div className="flex-1 h-px bg-gray-200" />
-                    </div>
+                  <div key={slot} className="space-y-3">
+                    <h3 className="font-black text-[15px] bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 flex justify-between">
+                      {slot} <span className="text-[11px] bg-gray-100 px-2 py-0.5 rounded text-gray-600">{slotOrders.length} orders</span>
+                    </h3>
 
-                    <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {slotOrders.map((o) => (
-                        <div key={o.id} className="bg-white rounded-[2rem] shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-xl transition-all duration-300">
-                          {/* Order Header */}
-                          <div className="flex justify-between items-start mb-6 pb-6 border-b border-gray-50">
-                            <div>
-                              <span className="bg-gray-900 text-white text-xs font-black px-3 py-1 rounded-lg uppercase tracking-widest mb-3 inline-block">
-                                #{o.id}
-                              </span>
-                              <h4 className="font-black text-xl text-gray-900 mb-1">{o.user_name || "Guest"}</h4>
-                              <p className="text-sm font-bold text-gray-400">{o.user_contact}</p>
+                        <div key={o.id} className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                          <div className="p-3.5 flex justify-between items-start bg-gray-50/50">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-black text-[14px] text-gray-900 truncate">{o.user_name || "Guest"}</h4>
+                              <p className="text-[11px] font-bold text-gray-400 mt-0.5">#{o.id} • {o.user_contact}</p>
                             </div>
-                            
-                            <div className="text-right">
-                              <p className="font-black text-2xl text-gray-900">₹{o.total_price}</p>
-                              {o.payment_status === "paid" ? (
-                                <span className="text-[10px] font-black text-green-700 bg-green-50 border border-green-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
-                                  Paid
-                                </span>
-                              ) : o.payment_status === "verification_pending" ? (
-                                <span className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
-                                  Verifying
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-black text-red-700 bg-red-50 border border-red-100 px-3 py-1 rounded-full uppercase tracking-widest inline-block mt-2">
-                                  Unpaid
-                                </span>
+                            <div className="text-right shrink-0">
+                              <p className="font-black text-[14px] text-primary leading-tight">₹{o.total_price}</p>
+                              <span className={cn("text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1.5 inline-block border", 
+                                o.payment_status === "paid" ? "bg-green-50 text-green-700 border-green-100" : 
+                                o.payment_status === "verification_pending" ? "bg-blue-50 text-blue-700 border-blue-100 animate-pulse" : 
+                                "bg-red-50 text-red-700 border-red-100")}>
+                                {o.payment_status === "verification_pending" ? "Action Req" : o.payment_status}
+                              </span>
+                            </div>
+                          </div>
+ 
+                          <div className="p-3.5 flex-1">
+                            <div className="space-y-1 mb-3">
+                              {o.items.map((i) => (
+                                <div key={i.id} className="flex justify-between text-[12px] font-medium text-gray-700">
+                                  <span>{i.quantity}x {i.item?.name}</span>
+                                </div>
+                              ))}
+                            </div>
+ 
+                            {o.special_instructions && (
+                              <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 mb-3">
+                                <p className="text-[10px] font-black text-amber-800 uppercase tracking-tighter mb-0.5">Note from student:</p>
+                                <p className="text-[11px] font-bold text-amber-700 leading-tight italic">"{o.special_instructions}"</p>
+                              </div>
+                            )}
+ 
+                            <div className="space-y-2">
+                              {o.payment_status === "verification_pending" && (
+                                <Button onClick={() => markPaid(o.id)} className="w-full h-9 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Confirm Payment</Button>
+                              )}
+ 
+                              {o.status === "Pending Payment" && o.payment_status === "paid" && (
+                                 <Button onClick={() => updateStatus(o.id, "Preparing")} className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Start Prep</Button>
+                              )}
+ 
+                              {o.status === "Preparing" && (
+                                <Button onClick={() => updateStatus(o.id, "Ready")} className="w-full h-9 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Mark Ready</Button>
+                              )}
+ 
+                              {o.status === "Ready" && (
+                                <div className="flex gap-2">
+                                  <Input 
+                                    maxLength={4} 
+                                    value={otpInputs[o.id] || ""} 
+                                    onChange={(e) => setOtpInputs(prev => ({...prev, [o.id]: e.target.value.replace(/[^0-9]/g, "")}))} 
+                                    className="h-9 text-center text-[15px] font-black rounded-lg w-20 bg-gray-50 border-gray-200" 
+                                    placeholder="OTP" 
+                                  />
+                                  <Button onClick={() => verifyOTP(o.id)} className="flex-1 h-9 text-[11px] font-black rounded-lg bg-gray-900 text-white uppercase tracking-wider">Complete</Button>
+                                </div>
                               )}
                             </div>
-                          </div>
-
-                          {/* Order Items */}
-                          <div className="flex-1 space-y-2 mb-6">
-                            {o.items.map((i) => (
-                              <div key={i.id} className="flex justify-between items-center text-sm">
-                                <span className="font-bold text-gray-700">
-                                  <span className="text-gray-300 mr-2">{i.quantity}x</span>
-                                  {i.item?.name || `Item #${i.item_id}`}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Action Center */}
-                          <div className="space-y-4">
-                            {/* Payment Verification Flow */}
-                            {o.payment_status === "verification_pending" && (
-                              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2">
-                                    <Clock className="w-4 h-4" /> Verify Payment
-                                  </p>
-                                  {o.payment_screenshot && (
-                                    <a 
-                                      href={o.payment_screenshot.startsWith("http") ? o.payment_screenshot : `${window.location.origin}${o.payment_screenshot}`} 
-                                      target="_blank" 
-                                      rel="noreferrer" 
-                                      className="text-[10px] font-black text-primary underline flex items-center gap-1 hover:text-primary/80 transition-colors"
-                                    >
-                                      <ImageIcon className="w-3 h-3" /> View Screenshot
-                                    </a>
-                                  )}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => markPaid(o.id)}
-                                    className="flex-1 h-12 bg-green-500 hover:bg-green-600 text-white font-black rounded-xl text-sm"
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    onClick={() => updateStatus(o.id, "Cancelled")}
-                                    variant="outline"
-                                    className="flex-1 h-12 border-red-200 text-red-500 hover:bg-red-50 font-black rounded-xl text-sm"
-                                  >
-                                    Reject
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Standard Status Updates */}
-                            {o.status === "Preparing" && (
-                              <Button
-                                onClick={() => updateStatus(o.id, "Ready")}
-                                className="w-full h-14 text-base font-black bg-blue-500 hover:bg-blue-600 rounded-2xl shadow-lg transition-all active:scale-95"
-                              >
-                                <ShoppingBag className="w-5 h-5 mr-2" /> MARK AS READY
-                              </Button>
-                            )}
-
-                            {o.status === "Ready" && (
-                              <div className="bg-blue-50 border-2 border-blue-100 rounded-[1.5rem] p-5">
-                                <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                  <KeyRound className="w-4 h-4" /> Enter Delivery OTP
-                                </p>
-                                <div className="flex gap-2">
-                                  <Input
-                                    placeholder="0000"
-                                    maxLength={4}
-                                    value={otpInputs[o.id] || ""}
-                                    onChange={(e) =>
-                                      setOtpInputs((prev) => ({
-                                        ...prev,
-                                        [o.id]: e.target.value.replace(/[^0-9]/g, ""),
-                                      }))
-                                    }
-                                    className="flex-1 h-14 text-center text-2xl font-black bg-white border-2 border-blue-200 rounded-xl"
-                                  />
-                                  <Button
-                                    onClick={() => verifyOTP(o.id)}
-                                    className="h-14 px-6 text-base font-black bg-primary rounded-xl shadow-lg"
-                                  >
-                                    GO
-                                  </Button>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => { if(confirm("Bypass OTP?")) updateStatus(o.id, "Completed"); }}
-                                  className="w-full mt-4 text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest"
-                                >
-                                  Bypass Verification
-                                </Button>
-                              </div>
-                            )}
-
-                            {/* Initial Status Action */}
-                            {o.status === "Pending Payment" && (
-                              <div className="flex gap-3">
-                                <Button
-                                  onClick={() => markPaid(o.id)}
-                                  className="flex-1 h-14 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-2xl transition-all shadow-lg"
-                                >
-                                  MARK PAID
-                                </Button>
-                                <Button
-                                  onClick={() => updateStatus(o.id, "Cancelled")}
-                                  variant="outline"
-                                  className="h-14 px-6 border-red-200 text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                                >
-                                  <XCircle className="w-6 h-6" />
-                                </Button>
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))}
@@ -519,178 +288,31 @@ export default function Admin() {
             )}
           </TabsContent>
 
-          {/* ─── INVENTORY TAB ─── */}
-          <TabsContent value="menu">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 mt-8">
-              {menu.map((m) => (
-                <div key={m.id} className={cn("bg-white rounded-[2rem] shadow-sm border border-gray-100 p-5 flex flex-col gap-5 transition-all hover:shadow-2xl hover:scale-[1.02] duration-500", !m.is_active && "opacity-60 grayscale-[0.5]")}>
-                  <div className="w-full h-48 rounded-[1.5rem] overflow-hidden relative group">
-                    <img src={m.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop"} alt={m.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute top-3 right-3">
-                       <Button onClick={() => { setEditing(m); setOpen(true); }} variant="secondary" size="icon" className="h-10 w-10 rounded-xl shadow-xl bg-white/90 backdrop-blur-sm border-none hover:bg-white">
-                         <Pencil className="w-4 h-4 text-gray-900" />
-                       </Button>
-                    </div>
-                    {m.veg_flag !== undefined && (
-                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border-none z-10">
-                         <div className={cn("h-4 w-4 border-2 rounded-sm flex items-center justify-center", m.veg_flag ? "border-green-600" : "border-red-600")}>
-                           <div className={cn("h-1.5 w-1.5 rounded-full", m.veg_flag ? "bg-green-600" : "bg-red-600")} />
-                         </div>
-                      </div>
-                    )}
-                    <div className="absolute bottom-3 left-3 flex gap-2">
-                       {m.is_trending && (
-                         <span className="bg-orange-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg">Trending</span>
-                       )}
-                       {m.is_best && (
-                         <span className="bg-yellow-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg">Bestseller</span>
-                       )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2">
-                       <h4 className="font-black text-xl text-gray-900 leading-tight">{m.name}</h4>
-                       <p className="font-black text-2xl text-primary">₹{m.price}</p>
-                    </div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{m.category}</p>
-                    
-                    <div className="flex items-center justify-between mt-auto bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                       <div className="flex flex-col">
-                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">In Stock</span>
-                         <span className={cn("text-lg font-black", m.available_quantity > 0 ? "text-green-600" : "text-red-600")}>
-                           {m.available_quantity} items
-                         </span>
-                       </div>
-                       
-                        <div className="flex gap-2">
-                          {m.available_quantity > 0 ? (
-                            <Button 
-                              onClick={() => { setEditing({ ...m, available_quantity: 0 }); save(); }} 
-                              variant="ghost" 
-                              className="h-12 flex-1 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-black text-xs uppercase tracking-widest"
-                            >
-                              <Ban className="w-4 h-4 mr-2" /> SOLD OUT
-                            </Button>
-                          ) : (
-                            <Button 
-                              onClick={() => { setEditing({ ...m, available_quantity: 50 }); save(); }} 
-                              variant="ghost" 
-                              className="h-12 flex-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-100 transition-all font-black text-xs uppercase tracking-widest"
-                            >
-                              <Plus className="w-4 h-4 mr-2" /> RESTOCK (50)
-                            </Button>
-                          )}
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-
           {/* ─── SLOTS TAB ─── */}
           <TabsContent value="slots">
-            <div className="max-w-4xl mx-auto mt-8 space-y-8">
-              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black flex items-center gap-2">
-                    <Plus className="w-5 h-5" /> Add New Pickup Slot
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={async () => {
-                        const lunchTimes = ["12:00 PM", "12:05 PM", "12:10 PM", "12:15 PM", "12:20 PM", "12:25 PM", "12:30 PM"];
-                        for (const t of lunchTimes) {
-                          try { await slotsApi.createSlot({ slot_time: t, max_orders: 25 }); } catch {}
-                        }
-                        toast.success("Lunch slots added");
-                        refresh();
-                      }}
-                      className="text-[10px] font-black uppercase tracking-widest border-blue-100 text-blue-600 hover:bg-blue-50"
-                    >
-                      + LUNCH PRESET
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={async () => {
-                        const breakTimes = ["10:30 AM", "10:35 AM", "10:40 AM", "10:45 AM"];
-                        for (const t of breakTimes) {
-                          try { await slotsApi.createSlot({ slot_time: t, max_orders: 25 }); } catch {}
-                        }
-                        toast.success("Break slots added");
-                        refresh();
-                      }}
-                      className="text-[10px] font-black uppercase tracking-widest border-orange-100 text-orange-600 hover:bg-orange-50"
-                    >
-                      + BREAK PRESET
-                    </Button>
-                  </div>
+            <div className="max-w-2xl mx-auto mt-4 space-y-6">
+              <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-end gap-3">
+                <div className="flex-1">
+                  <Label className="text-[11px] font-bold uppercase text-gray-500">Time (e.g. 10:30 AM)</Label>
+                  <Input value={newSlot.slot_time} onChange={(e) => setNewSlot({...newSlot, slot_time: e.target.value})} className="h-10 text-[13px] font-medium" />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <Input 
-                      placeholder="e.g. 10:30 AM" 
-                      value={newSlot.slot_time} 
-                      onChange={(e) => setNewSlot({...newSlot, slot_time: e.target.value})}
-                      className="h-14 rounded-xl font-bold"
-                    />
-                  </div>
-                  <div className="w-full sm:w-40">
-                    <Input 
-                      type="number" 
-                      placeholder="Max Orders" 
-                      value={newSlot.max_orders}
-                      onChange={(e) => setNewSlot({...newSlot, max_orders: +e.target.value})}
-                      className="h-14 rounded-xl font-bold"
-                    />
-                  </div>
-                  <Button 
-                    onClick={async () => {
-                      if(!newSlot.slot_time) return toast.error("Time required");
-                      await slotsApi.createSlot(newSlot);
-                      toast.success("Slot added");
-                      setNewSlot({ slot_time: "", max_orders: 25 });
-                      refresh();
-                    }}
-                    className="h-14 px-8 font-black rounded-xl"
-                  >
-                    ADD SLOT
-                  </Button>
+                <div className="w-24">
+                  <Label className="text-[11px] font-bold uppercase text-gray-500">Cap</Label>
+                  <Input type="number" value={newSlot.max_orders} onChange={(e) => setNewSlot({...newSlot, max_orders: +e.target.value})} className="h-10 text-[13px] font-medium" />
                 </div>
+                <Button onClick={async () => { if(newSlot.slot_time){ await slotsApi.createSlot(newSlot); refresh(); setNewSlot({slot_time:"",max_orders:25}) } }} className="h-10 px-4 text-[12px] font-bold rounded-lg">Add</Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {slots.sort((a,b) => a.slot_time.localeCompare(b.slot_time)).map(s => (
-                  <div key={s.id} className={cn("bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between", !s.is_active && "bg-gray-50 opacity-70")}>
+                  <div key={s.id} className={cn("bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between", !s.is_active && "bg-gray-50 opacity-50")}>
                     <div>
-                      <p className="font-black text-lg">{s.slot_time}</p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.max_orders} max capacity</p>
+                      <p className="font-bold text-[14px]">{s.slot_time}</p>
+                      <p className="text-[10px] font-bold text-gray-400">Cap: {s.max_orders}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={s.is_active} 
-                        onCheckedChange={async () => {
-                          await slotsApi.toggleSlot(s.id);
-                          refresh();
-                        }} 
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={async () => {
-                          if(confirm("Delete slot?")) {
-                            await slotsApi.deleteSlot(s.id);
-                            refresh();
-                          }
-                        }}
-                        className="text-red-400 hover:text-red-600 h-10 w-10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <Switch checked={s.is_active} onCheckedChange={async () => { await slotsApi.toggleSlot(s.id); refresh(); }} />
+                      <button onClick={async () => { if(confirm("Delete?")) { await slotsApi.deleteSlot(s.id); refresh(); } }} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 ))}

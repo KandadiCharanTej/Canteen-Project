@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         if self.SQLALCHEMY_DATABASE_URI:
             return self.SQLALCHEMY_DATABASE_URI
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+        # Fallback to SQLite for local development
+        return "sqlite:///./canteen.db"
 
     # Redis
     REDIS_HOST: str = "localhost"
@@ -37,6 +38,9 @@ class Settings(BaseSettings):
     
     # Security
     CORS_ORIGINS: str = "*"
+    
+    # SMS (Fast2SMS)
+    SMS_API_KEY: Optional[str] = None
     
     class Config:
         case_sensitive = True

@@ -39,36 +39,27 @@ http.interceptors.response.use(
 
 // ─────────── Auth API ───────────
 export const authApi = {
-  async sendOTP(contact: string): Promise<any> {
-    const res = await http.post("/auth/send-otp", { contact });
-    return res.data;
-  },
-
-  async verifyOTP(contact: string, otp: string): Promise<{
+  async login(contact: string, aurora_uid?: string): Promise<{
     access_token: string;
-    user?: User;
-    is_registered: boolean;
+    user: User;
   }> {
     const res = await http.post<{
       access_token: string;
-      user?: User;
-      is_registered: boolean;
-    }>("/auth/verify-otp", { contact, otp });
+      user: User;
+    }>("/auth/login", { contact, aurora_uid });
     
-    if (res.data.access_token) {
-      localStorage.setItem("canteen_token", res.data.access_token);
-      if (res.data.user) {
-        localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
-      }
-    }
+    localStorage.setItem("canteen_token", res.data.access_token);
+    localStorage.setItem("canteen_user", JSON.stringify(res.data.user));
     return res.data;
   },
 
   async signup(data: {
     name: string;
+    email?: string;
     contact: string;
     category?: string;
     student_class?: string;
+    aurora_uid?: string;
   }): Promise<AuthResponse> {
     const res = await http.post<AuthResponse>("/auth/signup", data);
     localStorage.setItem("canteen_token", res.data.access_token);
