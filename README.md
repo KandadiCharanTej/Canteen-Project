@@ -1,113 +1,76 @@
-# Campus Canteen System
+# QuickBite (Campus Canteen System)
 
-A complete full-stack web application for ordering food from a college/campus canteen. This system allows students to skip the queue by ordering ahead and picking up their food during specifically allocated time slots. It also features an admin dashboard for canteen staff to manage incoming orders.
+A production-grade, full-stack monorepo for ordering food from a college/campus canteen. This system allows students to skip the queue by ordering ahead and picking up their food during specifically allocated time slots.
 
-## ✨ Features
-
-* **User Authentication**: Secure sign-up and login system for students and admins.
-* **Menu Browsing**: View available food items with prices and real-time stock availability.
-* **Cart System**: Add/remove items from the shopping cart.
-* **Time Slot Booking**: Select specific pickup times (e.g., 10:15 AM) to manage canteen crowd flow. Slots have maximum capacities.
-* **Order Management**: Users can view their order history and current status.
-* **Admin Dashboard**: Canteen staff can view all orders, update order statuses (Pending, Preparing, Ready, Completed), and add new items to the menu.
-* **Responsive Design**: Modern, mobile-friendly UI that works seamlessly on all devices.
-
-## 🛠️ Tech Stack
-
-### Frontend
-* **Framework**: React 18 with TypeScript
-* **Build Tool**: Vite
-* **Styling**: Tailwind CSS
-* **Components**: shadcn/ui & Radix UI
-* **Icons**: Lucide React
-
-### Backend
-* **Framework**: FastAPI (Python)
-* **Database**: SQLite
-* **ORM**: SQLAlchemy
-* **Authentication**: OAuth2 with bcrypt password hashing
-
-## 📂 Project Structure
+## 🏗️ Project Structure
 
 ```text
-Canteen-Project/
-├── Backend/                 # FastAPI server and Database logic
-│   ├── database.py          # Database connection setup
-│   ├── main.py              # Main FastAPI application and API routes
-│   ├── models.py            # SQLAlchemy database models
-│   ├── schemas.py           # Pydantic schemas for data validation
-│   └── seed.py              # Script to seed initial menu data
-├── Frontend/                # React Single Page Application
-│   ├── public/              # Static assets
-│   └── src/                 
-│       ├── components/      # Reusable UI components
-│       ├── context/         # React context (Auth & Cart)
-│       ├── pages/           # Application pages (Home, Menu, Checkout, Admin, etc.)
-│       └── lib/             # Utility functions and API client
+quickbite/
+│
+├── apps/
+│   ├── web/        ← Next.js frontend
+│   ├── api/        ← FastAPI backend
+│   └── admin/      ← Admin Dashboard (Planned)
+│
+├── packages/       ← Shared configurations & types
+├── infrastructure/ ← Docker, CI/CD, and deployment scripts
+├── docs/           ← API documentation & architecture guides
+├── scripts/        ← Automation & maintenance scripts
+│
+├── .env            # Root environment variables
+├── package.json    # Monorepo configuration (Turbo & Workspaces)
 └── README.md
 ```
 
-## 🚀 Setup and Installation
+## ✨ Key Features
+
+*   **User Authentication**: Secure sign-up/login for students and admins.
+*   **Menu Browsing**: Real-time stock availability and dynamic pricing.
+*   **Time Slot Booking**: Intelligent capacity management for pickup slots.
+*   **Order Management**: Real-time status updates (Preparing → Ready → Completed).
+*   **Modern UI/UX**: Built with Next.js 14, Tailwind CSS, and shadcn/ui.
+
+## 🛠️ Tech Stack
+
+### Core
+*   **Monorepo Tooling**: [Turborepo](https://turbo.build/) + NPM Workspaces
+*   **Frontend**: [Next.js 14](https://nextjs.org/) (App Router), TypeScript, Tailwind CSS
+*   **Backend**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+), SQLAlchemy 2.0
+*   **Database**: PostgreSQL (Production) / SQLite (Development)
+*   **Caching**: Redis (for rate limiting and session management)
+
+## 🚀 Getting Started
 
 ### Prerequisites
-* **Node.js** (v18 or higher)
-* **Python** (v3.8 or higher)
+*   Node.js (v18+)
+*   Python (v3.10+)
+*   Docker (Optional, for local services like PostgreSQL/Redis)
 
-### 1. Clone the repository
+### 1. Installation
+Install all dependencies for the entire monorepo from the root:
 ```bash
-git clone https://github.com/KandadiCharanTej/Canteen-Project.git
-cd Canteen-Project
-```
-
-### 2. Frontend Setup (Build the UI)
-The backend is configured to serve the built static files of the frontend. First, we need to compile the React app.
-```bash
-cd Frontend
 npm install
-npm run build
-cd ..
 ```
-*Note: The `npm run build` command generates a `dist` folder inside `Frontend/` which the backend will serve.*
 
-### 3. Backend Setup
-Open a new terminal in the `Backend` directory.
+### 2. Environment Setup
+Copy the example environment file and update your variables:
 ```bash
-cd Backend
-
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-# source venv/bin/activate
-
-# Install Python dependencies
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-### 4. Run the Application
-Make sure your virtual environment is active in the `Backend` folder, then start the FastAPI server:
+### 3. Running Locally
+Start both the frontend and backend in development mode:
 ```bash
-python -m uvicorn main:app --reload
+npm run dev
 ```
+*   **Web**: http://localhost:3000
+*   **API**: http://localhost:8000
+*   **API Docs**: http://localhost:8000/docs
 
-The application will now be running! Open your browser and navigate to:
-**http://127.0.0.1:8000**
-
-## 🌐 API Endpoints Overview
-
-The FastAPI backend exposes the following RESTful endpoints (view full interactive docs at `http://127.0.0.1:8000/docs` when the server is running):
-
-* `POST /signup` - Register a new user.
-* `POST /login` - Authenticate and receive a token.
-* `GET /menu` - Retrieve all active menu items.
-* `POST /menu` - Add a new menu item (Admin only).
-* `GET /slots` - Get available pickup time slots and their capacities.
-* `POST /orders` - Place a new order for a specific time slot.
-* `GET /orders` - View user's orders (or all orders if Admin).
-* `PUT /orders/{order_id}` - Update the status of an order (Admin only).
+## 📦 Deployment
+The project is optimized for deployment on:
+*   **Frontend**: Vercel
+*   **Backend**: Render / Docker (AWS/GCP)
 
 ## 📝 License
-This project is open-source and available under the MIT License.
+MIT License
