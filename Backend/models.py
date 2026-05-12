@@ -64,6 +64,7 @@ class Order(Base):
     payment_status = Column(String, default="pending", index=True)
     payment_method = Column(String, default="UPI")
     upi_ref = Column(String, nullable=True, index=True)
+    transaction_id = Column(String, unique=True, index=True, nullable=True) # For real payments
     payment_screenshot = Column(String, nullable=True)
     time_slot = Column(String, index=True)
     special_instructions = Column(String, nullable=True)

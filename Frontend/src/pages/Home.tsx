@@ -55,7 +55,7 @@ export default function Home() {
               Campus Canteen <ChevronRight className="h-4 w-4" />
             </h1>
             <p className="text-[11px] text-gray-500 font-medium">
-              {user ? `Hello, ${user.name.split(" ")[0]}` : "Welcome to CanteenFood"}
+              {user ? `Hello, ${user.name.split(" ")[0]}` : "Welcome to QuickBite"}
             </p>
           </div>
         </div>

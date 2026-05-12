@@ -13,7 +13,6 @@ export function BottomNav() {
 
   const items = [
     { to: "/", label: "Home", icon: Home },
-    { to: "/search", label: "Search", icon: Search },
     { to: "/cart", label: "Cart", icon: ShoppingBag, badge: count },
     { to: "/orders", label: "Orders", icon: ClipboardList },
     { to: "/profile", label: "Profile", icon: User },

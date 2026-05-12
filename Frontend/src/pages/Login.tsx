@@ -47,7 +47,7 @@ export default function Login() {
         student_class: studentClass.trim() || undefined,
         aurora_uid: auroraUid.trim() || undefined,
       });
-      toast.success(`Welcome to CanteenFood!`);
+      toast.success(`Welcome to QuickBite!`);
       navigate(from, { replace: true });
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Action failed. Please check your details.");

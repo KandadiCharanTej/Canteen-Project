@@ -115,6 +115,8 @@ class OrderOut(BaseModel):
     status: str
     payment_status: str
     payment_method: str
+    upi_ref: Optional[str] = None
+    transaction_id: Optional[str] = None
     payment_screenshot: Optional[str] = None
     time_slot: str
     special_instructions: Optional[str] = None
@@ -129,6 +131,7 @@ class OrderUpdateStatus(BaseModel):
 class OrderUpdatePayment(BaseModel):
     payment_status: str
     upi_ref: Optional[str] = None
+    transaction_id: Optional[str] = None
 
 class OTPVerify(BaseModel):
     order_id: int

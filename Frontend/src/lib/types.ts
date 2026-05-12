@@ -71,6 +71,7 @@ export interface Order {
   items: OrderItem[];
   user_name?: string | null;
   user_contact?: string | null;
+  special_instructions?: string | null;
 }
 
 export interface Profile {

@@ -5,12 +5,14 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ordersApi } from "@/lib/api";
 import { Order } from "@/lib/types";
-import { Smartphone, CheckCircle2, Copy, ReceiptText, ChevronRight, Clock, ArrowLeft } from "lucide-react";
+import { Smartphone, CheckCircle2, Copy, ReceiptText, ChevronRight, Clock, ArrowLeft, QrCode, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { QRCodeSVG } from "qrcode.react";
 
-const UPI_ID = "canteen@upi";
-const UPI_NAME = "CanteenFood";
+// ─────────── CONFIG ───────────
+const UPI_ID = "charan@axl"; // User's real UPI ID
+const UPI_NAME = "QuickBite";
 
 export default function Checkout() {
   const { items, total, clear } = useCart();
@@ -21,6 +23,7 @@ export default function Checkout() {
   const [placed, setPlaced] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [paidClicked, setPaidClicked] = useState(false);
+  const [paymentView, setPaymentView] = useState<"options" | "qr" | "screenshot">("options");
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -28,12 +31,13 @@ export default function Checkout() {
       return;
     }
     const slot = sessionStorage.getItem("checkout_slot");
-    if (!slot || items.length === 0) {
+    // Only redirect if order has NOT been placed yet
+    if (!placed && (!slot || items.length === 0)) {
       navigate("/cart");
       return;
     }
-    setSlotTime(slot);
-  }, [items.length, navigate, isLoggedIn]);
+    setSlotTime(slot || "");
+  }, [items.length, navigate, isLoggedIn, placed]);
 
   const placeOrder = async () => {
     if (!user || !slotTime) return;
@@ -50,6 +54,7 @@ export default function Checkout() {
       sessionStorage.removeItem("checkout_instructions");
       setPlacedOrder(order);
       setPlaced(true);
+      window.scrollTo(0, 0);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Could not place order.");
     } finally {
@@ -57,16 +62,26 @@ export default function Checkout() {
     }
   };
 
-  const openUPI = (app?: string) => {
+  const getUPILink = () => {
     const amount = placedOrder?.total_price || total;
-    let upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=Order_${placedOrder?.id || ""}`;
-    
-    // Add specific app package intents if possible, though upi://pay usually prompts the chooser on mobile.
-    if (app === "phonepe") upiLink = `phonepe://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=Order_${placedOrder?.id}`;
-    if (app === "gpay") upiLink = `tez://upi/pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=Order_${placedOrder?.id}`;
-    if (app === "paytm") upiLink = `paytmmp://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=Order_${placedOrder?.id}`;
+    return `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=Order_${placedOrder?.id || ""}`;
+  };
 
-    window.location.href = upiLink;
+  const openApp = (app: "phonepe" | "gpay" | "paytm" | "generic") => {
+    const link = getUPILink();
+    let finalLink = link;
+    
+    // Deep link prefixes (Browser-dependent behavior)
+    if (app === "phonepe") finalLink = link.replace("upi://", "phonepe://");
+    if (app === "gpay") finalLink = link.replace("upi://", "tez://upi/");
+    if (app === "paytm") finalLink = link.replace("upi://", "paytmmp://");
+
+    window.location.href = finalLink;
+  };
+
+  const copyUPI = () => {
+    navigator.clipboard.writeText(UPI_ID);
+    toast.success("UPI ID Copied!");
   };
 
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -80,6 +95,7 @@ export default function Checkout() {
         await ordersApi.uploadScreenshot(placedOrder.id, file);
         setScreenshot(file);
         toast.success("Screenshot uploaded!");
+        setPaymentView("options");
       } catch {
         toast.error("Failed to upload screenshot");
       } finally {
@@ -106,87 +122,149 @@ export default function Checkout() {
   if (placed && placedOrder) {
     return (
       <div className="bg-[#f8f9fa] min-h-screen pb-24 pt-6 px-4 max-w-md mx-auto">
-        {/* Success Header */}
         <div className="text-center mb-6">
-           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-             <CheckCircle2 className="h-8 w-8 text-green-600" />
+           <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+             <CheckCircle2 className="h-7 w-7 text-green-600" />
            </div>
-           <h2 className="text-[20px] font-black text-gray-900 leading-tight">Order Created!</h2>
-           <p className="text-xs font-bold text-gray-500 mt-1">Order #{placedOrder.id}</p>
+           <h2 className="text-[20px] font-black text-gray-900">Order Placed!</h2>
+           <p className="text-xs font-bold text-gray-500 mt-1">₹{placedOrder.total_price} • Order #{placedOrder.id}</p>
         </div>
 
-        {/* Payment Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-          <h3 className="font-bold text-[14px] text-gray-900 mb-4 flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-primary" /> Complete Payment
-          </h3>
-          
-          {!paidClicked ? (
-             <div className="space-y-4">
-               <div className="grid grid-cols-4 gap-2">
-                  <button onClick={() => openUPI("gpay")} className="flex flex-col items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all">
-                     <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" className="h-5" />
-                  </button>
-                  <button onClick={() => openUPI("phonepe")} className="flex flex-col items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple-200 transition-all">
-                     <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/PhonePe_Logo.svg" alt="PhonePe" className="h-5" />
-                  </button>
-                  <button onClick={() => openUPI("paytm")} className="flex flex-col items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all">
-                     <span className="text-[10px] font-black text-sky-500">PayTM</span>
-                  </button>
-                  <button onClick={() => openUPI()} className="flex flex-col items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary/20 transition-all">
-                     <span className="text-[10px] font-black text-gray-500">Other</span>
-                  </button>
-               </div>
-
-               <div className="relative mt-2">
-                  <input 
-                    type="file" id="screenshot" className="hidden" accept="image/*"
-                    onChange={handleScreenshotUpload} disabled={uploading}
-                  />
-                  <label 
-                    htmlFor="screenshot" 
-                    className={cn(
-                      "w-full h-12 rounded-xl border border-dashed border-gray-300 flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-all",
-                      screenshot && "border-green-300 bg-green-50"
-                    )}
-                  >
-                    {uploading ? (
-                      <span className="text-[12px] font-bold text-gray-400">Uploading...</span>
-                    ) : screenshot ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <span className="text-[12px] font-bold text-green-800">Screenshot Attached</span>
-                      </>
-                    ) : (
-                      <span className="text-[12px] font-bold text-gray-500">Attach Screenshot (Optional)</span>
-                    )}
-                  </label>
-               </div>
-
-               <Button onClick={handlePaid} className="w-full h-12 rounded-xl font-bold text-[14px] bg-[#60b246] hover:bg-[#529b3b] shadow-sm transition-transform active:scale-95">
-                 I Have Paid ₹{placedOrder.total_price}
-               </Button>
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden mb-6">
+          {/* Header */}
+          <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+             <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Payment Portal</span>
+             <div className="flex items-center gap-1.5 bg-green-100 px-2 py-0.5 rounded-full">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[9px] font-black text-green-700 uppercase">Live Secure</span>
              </div>
-          ) : (
-             <div className="flex items-center gap-3 bg-orange-50 p-3 rounded-xl border border-orange-100">
-                <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center animate-spin-slow">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-bold text-orange-800">Verifying Payment</p>
-                  <p className="text-[11px] font-medium text-orange-600 mt-0.5">Please wait while admin confirms.</p>
-                </div>
-             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="flex gap-2">
-          <Button onClick={() => navigate("/")} variant="outline" className="flex-1 h-12 rounded-xl font-bold border-gray-200 text-[13px]">
-            Menu
-          </Button>
-          <Button onClick={() => navigate("/orders")} className="flex-1 h-12 rounded-xl font-bold shadow-sm text-[13px]">
-            Track Order
-          </Button>
+          <div className="p-5">
+            {!paidClicked ? (
+              <>
+                {paymentView === "options" && (
+                  <div className="space-y-4">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase text-center mb-1">Pay Using UPI App</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => openApp("phonepe")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaff] border border-purple-100 hover:bg-purple-50 transition-all group">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/PhonePe_Logo.svg" alt="PhonePe" className="h-5 w-5" />
+                        <span className="text-[13px] font-black text-purple-700">PhonePe</span>
+                      </button>
+                      <button onClick={() => openApp("gpay")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8faff] border border-blue-100 hover:bg-blue-50 transition-all">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" className="h-5 w-5" />
+                        <span className="text-[13px] font-black text-blue-700">Google Pay</span>
+                      </button>
+                      <button onClick={() => openApp("paytm")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8fbff] border border-sky-100 hover:bg-sky-50 transition-all">
+                        <span className="h-5 w-5 flex items-center justify-center font-black text-sky-600 text-[10px]">PTM</span>
+                        <span className="text-[13px] font-black text-sky-700">Paytm</span>
+                      </button>
+                      <button onClick={() => setPaymentView("qr")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fafafa] border border-gray-100 hover:bg-gray-50 transition-all">
+                        <QrCode className="h-5 w-5 text-gray-600" />
+                        <span className="text-[13px] font-black text-gray-700">Scan QR</span>
+                      </button>
+                    </div>
+
+                    <div className="pt-2">
+                       <button onClick={copyUPI} className="w-full flex items-center justify-between p-3 rounded-xl border border-dashed border-gray-200 hover:bg-gray-50 transition-all">
+                          <div className="flex flex-col items-start">
+                             <span className="text-[9px] font-bold text-gray-400 uppercase">UPI ID</span>
+                             <span className="text-[12px] font-black text-gray-700">{UPI_ID}</span>
+                          </div>
+                          <Copy className="h-4 w-4 text-gray-400" />
+                       </button>
+                    </div>
+
+                    <div className="pt-2 flex flex-col gap-2">
+                       <Button onClick={handlePaid} className="w-full h-12 rounded-xl font-black text-[14px] bg-[#60b246] hover:bg-[#529b3b] shadow-lg shadow-green-600/20">
+                         I Have Completed Payment
+                       </Button>
+                       <button onClick={() => setPaymentView("screenshot")} className="text-[11px] font-bold text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-1 py-1">
+                          <ImageIcon className="h-3 w-3" /> Upload Screenshot (Optional)
+                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {paymentView === "qr" && (
+                  <div className="flex flex-col items-center py-4">
+                    <h3 className="text-[14px] font-black text-gray-900 mb-4">Scan & Pay</h3>
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                       <QRCodeSVG value={getUPILink()} size={180} level="H" includeMargin={true} />
+                    </div>
+                    <p className="text-[16px] font-black text-gray-900 mb-1">₹{placedOrder.total_price}</p>
+                    <p className="text-[11px] font-bold text-gray-400 mb-6">Payable to {UPI_NAME}</p>
+                    <Button onClick={() => setPaymentView("options")} variant="outline" className="h-10 px-8 rounded-full font-black text-[11px] uppercase tracking-wider">
+                       Back to Apps
+                    </Button>
+                  </div>
+                )}
+
+                {paymentView === "screenshot" && (
+                  <div className="flex flex-col items-center py-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                       <ImageIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-[15px] font-black text-gray-900 mb-1">Attach Proof</h3>
+                    <p className="text-[11px] font-bold text-gray-400 mb-6 text-center">Upload a screenshot of your payment confirmation</p>
+                    
+                    <div className="w-full max-w-[240px] mb-6">
+                       <input 
+                         type="file" id="p-screenshot" className="hidden" accept="image/*"
+                         onChange={handleScreenshotUpload} disabled={uploading}
+                       />
+                       <label 
+                         htmlFor="p-screenshot" 
+                         className={cn(
+                           "w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-50 transition-all",
+                           screenshot && "border-green-300 bg-green-50"
+                         )}
+                       >
+                         {uploading ? (
+                           <div className="flex flex-col items-center gap-2">
+                             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                             <span className="text-[11px] font-bold text-gray-400">Uploading...</span>
+                           </div>
+                         ) : screenshot ? (
+                           <div className="flex flex-col items-center gap-2 text-green-700">
+                             <CheckCircle2 className="h-8 w-8" />
+                             <span className="text-[11px] font-bold">Screenshot Attached</span>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col items-center gap-2 text-gray-400">
+                             <ExternalLink className="h-6 w-6" />
+                             <span className="text-[11px] font-bold">Choose Image</span>
+                           </div>
+                         )}
+                       </label>
+                    </div>
+                    <Button onClick={() => setPaymentView("options")} variant="ghost" className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                       Cancel
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-8 text-center flex flex-col items-center">
+                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4 relative">
+                   <Clock className="w-8 h-8 text-orange-600 animate-spin-slow" />
+                   <div className="absolute inset-0 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+                 </div>
+                 <h3 className="text-[18px] font-black text-gray-900 mb-2">Verifying Payment</h3>
+                 <p className="text-[12px] font-bold text-gray-500 leading-relaxed max-w-[200px] mx-auto">
+                    Admin is checking your transaction. You will get an OTP once confirmed.
+                 </p>
+                 <div className="mt-8 flex flex-col gap-2 w-full">
+                    <Button onClick={() => navigate("/orders")} className="w-full h-11 rounded-xl font-black text-[12px] uppercase tracking-wider">
+                       Track in Orders
+                    </Button>
+                    <Button onClick={() => navigate("/")} variant="ghost" className="text-[11px] font-black text-gray-400">
+                       Back to Menu
+                    </Button>
+                 </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -199,34 +277,37 @@ export default function Checkout() {
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-[18px] font-black text-gray-900">Checkout</h1>
+        <h1 className="text-[18px] font-black text-gray-900">Final Step</h1>
       </div>
 
-      <div className="space-y-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-           <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
-             <div className="flex items-center gap-2">
-               <Clock className="w-4 h-4 text-gray-400" />
-               <span className="text-[13px] font-bold text-gray-600">Pickup Time</span>
-             </div>
-             <span className="font-black text-[14px] text-gray-900">{slotTime}</span>
-           </div>
-
-           <div className="space-y-2 mb-4">
+      <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50">
+           <h3 className="text-[13px] font-black text-gray-400 uppercase tracking-widest mb-4">Order Summary</h3>
+           <div className="space-y-3">
              {items.map((i) => (
-               <div key={i.id} className="flex justify-between text-[13px]">
-                 <span className="font-medium text-gray-700">
-                   <span className="text-gray-400 mr-2">{i.qty}x</span> 
-                   {i.name}
-                 </span>
-                 <span className="font-bold text-gray-900">₹{i.price * i.qty}</span>
+               <div key={i.id} className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="text-[14px] font-black text-gray-900">{i.name}</span>
+                    <span className="text-[11px] font-bold text-gray-400">Qty: {i.qty}</span>
+                  </div>
+                  <span className="text-[14px] font-black text-gray-900">₹{i.price * i.qty}</span>
                </div>
              ))}
            </div>
-           
-           <div className="border-t border-dashed border-gray-100 pt-3 flex justify-between items-center">
-             <span className="font-bold text-[13px] text-gray-900">Total</span>
-             <span className="font-black text-[16px] text-gray-900">₹{total}</span>
+        </div>
+        
+        <div className="p-5 space-y-4">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                 <Clock className="w-4 h-4 text-primary" />
+                 <span className="text-[13px] font-black text-gray-600">Pickup Slot</span>
+              </div>
+              <span className="text-[14px] font-black text-gray-900">{slotTime}</span>
+           </div>
+
+           <div className="pt-4 border-t border-dashed border-gray-100 flex justify-between items-center">
+              <span className="text-[14px] font-black text-gray-900">Total Payable</span>
+              <span className="text-[20px] font-black text-gray-900">₹{total}</span>
            </div>
         </div>
       </div>
@@ -237,11 +318,21 @@ export default function Checkout() {
            onClick={placeOrder}
            disabled={placing}
            className={cn(
-             "w-full bg-[#60b246] hover:bg-[#529b3b] text-white font-bold py-3.5 rounded-xl shadow-md shadow-green-600/20 transition-transform active:scale-95 flex items-center justify-center gap-2 text-[15px]",
+             "w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-[16px]",
              placing && "opacity-70 pointer-events-none"
            )}
          >
-           {placing ? "Placing..." : `Place Order • ₹${total}`}
+           {placing ? (
+             <div className="flex items-center gap-2">
+               <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+               <span>Creating Order...</span>
+             </div>
+           ) : (
+             <>
+               <span>Proceed to Pay • ₹{total}</span>
+               <ChevronRight className="h-5 w-5" />
+             </>
+           )}
          </button>
       </div>
     </div>

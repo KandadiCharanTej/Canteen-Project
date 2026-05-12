@@ -12,7 +12,6 @@ export function Sidebar() {
 
   const items = [
     { to: "/", label: "Home", icon: Home },
-    { to: "/search", label: "Search", icon: Search },
     { to: "/cart", label: "Cart", icon: ShoppingBag, badge: count },
     { to: "/orders", label: "Orders", icon: ClipboardList },
     { to: "/profile", label: "Profile", icon: User },
@@ -29,8 +28,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white border-r border-gray-100 p-4 shrink-0">
       <div className="flex items-center gap-2 px-2 mb-8">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl">C</div>
-        <span className="text-xl font-black tracking-tight">Canteen<span className="text-primary">Food</span></span>
+        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl">Q</div>
+        <span className="text-xl font-black tracking-tight">Quick<span className="text-primary">Bite</span></span>
       </div>
 
       <nav className="flex-1 space-y-1">

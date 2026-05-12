@@ -157,6 +157,7 @@ export const slotsApi = {
 export const ordersApi = {
   async createOrder(data: {
     time_slot: string;
+    special_instructions?: string;
     items: { item_id: number; quantity: number }[];
   }): Promise<Order> {
     const res = await http.post<Order>("/orders", data);

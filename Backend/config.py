@@ -3,7 +3,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Base
-    PROJECT_NAME: str = "CanteenFood"
+    PROJECT_NAME: str = "QuickBite"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = "PRODUCTION_SECRET_KEY_CHANGE_ME"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week

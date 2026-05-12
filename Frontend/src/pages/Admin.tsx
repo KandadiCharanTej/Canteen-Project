@@ -104,6 +104,16 @@ export default function Admin() {
     } catch { toast.error("Invalid OTP"); }
   };
 
+  const rejectOrder = async (id: number) => {
+    try { 
+      await ordersApi.updatePayment(id, "failed"); 
+      await ordersApi.updateStatus(id, "Cancelled");
+      toast.error("Order Rejected"); 
+      refresh(); 
+    } 
+    catch { toast.error("Failed to reject"); }
+  };
+
   return (
     <div className="bg-[#f8f9fa] min-h-screen pb-12">
       <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-50 flex items-center justify-between shadow-sm">
@@ -252,10 +262,20 @@ export default function Admin() {
                               </div>
                             )}
  
-                            <div className="space-y-2">
-                              {o.payment_status === "verification_pending" && (
-                                <Button onClick={() => markPaid(o.id)} className="w-full h-9 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Confirm Payment</Button>
-                              )}
+                             <div className="space-y-2">
+                               {o.payment_status === "verification_pending" && (
+                                 <div className="space-y-2">
+                                   {o.payment_screenshot && (
+                                     <a href={o.payment_screenshot} target="_blank" rel="noreferrer" className="w-full h-8 flex items-center justify-center gap-2 rounded-lg bg-blue-50 text-blue-700 text-[10px] font-black uppercase hover:bg-blue-100 transition-colors">
+                                       <Filter className="w-3 h-3" /> View Screenshot
+                                     </a>
+                                   )}
+                                   <div className="flex gap-2">
+                                     <Button onClick={() => markPaid(o.id)} className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Accept</Button>
+                                     <Button onClick={() => rejectOrder(o.id)} variant="outline" className="flex-1 h-9 border-red-200 text-red-600 font-black rounded-lg text-[11px] uppercase tracking-wider">Reject</Button>
+                                   </div>
+                                 </div>
+                               )}
  
                               {o.status === "Pending Payment" && o.payment_status === "paid" && (
                                  <Button onClick={() => updateStatus(o.id, "Preparing")} className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-lg text-[11px] uppercase tracking-wider">Start Prep</Button>

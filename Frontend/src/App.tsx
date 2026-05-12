@@ -13,7 +13,6 @@ const Home = lazy(() => import("@/pages/Home"));
 const Cart = lazy(() => import("@/pages/Cart"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const Orders = lazy(() => import("@/pages/Orders"));
-const Search = lazy(() => import("@/pages/Search"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -56,13 +55,12 @@ const App = () => (
             <MainLayout>
               <Suspense fallback={
                 <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-                  <Spinner label="Loading CanteenFood..." />
+                  <Spinner label="Loading QuickBite..." />
                 </div>
               }>
                 <Routes>
                   {/* Public - NO login required */}
                   <Route path="/" element={<Home />} />
-                  <Route path="/search" element={<Search />} />
                   <Route path="/login" element={<Login />} />
 
                   {/* Protected Routes */}
