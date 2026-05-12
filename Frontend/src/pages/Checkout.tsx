@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
 
 // ─────────── CONFIG ───────────
-const UPI_ID = "charan@axl"; // User's real UPI ID
+const UPI_ID = "kandadicharantej21@ybl"; // New UPI ID
 const UPI_NAME = "QuickBite";
 
 export default function Checkout() {

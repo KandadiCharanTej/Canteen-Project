@@ -44,6 +44,6 @@ class PaymentService:
 
 # Initialize with production values or placeholders
 payment_service = PaymentService(
-    upi_id="canteen@upi", 
+    upi_id="kandadicharantej21@ybl", 
     merchant_name="QuickBite Production"
 )
