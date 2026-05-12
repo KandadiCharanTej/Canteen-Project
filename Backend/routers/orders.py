@@ -70,6 +70,7 @@ def create_order(
             user_id=current_user.id,
             total_price=total_price,
             time_slot=order_data.time_slot,
+            special_instructions=order_data.special_instructions,
             otp=otp,
             status="Pending Payment",
             payment_status="pending"

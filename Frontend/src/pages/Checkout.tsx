@@ -38,13 +38,16 @@ export default function Checkout() {
   const placeOrder = async () => {
     if (!user || !slotTime) return;
     setPlacing(true);
+    const instructions = sessionStorage.getItem("checkout_instructions");
     try {
       const order = await ordersApi.createOrder({
         time_slot: slotTime,
+        special_instructions: instructions || undefined,
         items: items.map((i) => ({ item_id: i.id, quantity: i.qty })),
       });
       clear();
       sessionStorage.removeItem("checkout_slot");
+      sessionStorage.removeItem("checkout_instructions");
       setPlacedOrder(order);
       setPlaced(true);
     } catch (err: any) {
