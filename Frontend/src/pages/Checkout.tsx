@@ -69,14 +69,16 @@ export default function Checkout() {
 
   const openApp = (app: "phonepe" | "gpay" | "paytm" | "generic") => {
     const link = getUPILink();
-    let finalLink = link;
     
-    // Deep link prefixes (Browser-dependent behavior)
-    if (app === "phonepe") finalLink = link.replace("upi://", "phonepe://");
-    if (app === "gpay") finalLink = link.replace("upi://", "tez://upi/");
-    if (app === "paytm") finalLink = link.replace("upi://", "paytmmp://");
-
-    window.location.href = finalLink;
+    // Most mobile browsers (Chrome/Safari) handle upi:// best by letting the OS show the chooser.
+    // However, some specific apps respond better to their own schemes if installed.
+    // Standard UPI intent is the most reliable for 'Proceed to Pay' flow.
+    window.location.assign(link);
+    
+    // Fallback for some browsers that block location.assign
+    setTimeout(() => {
+      window.location.href = link;
+    }, 250);
   };
 
   const copyUPI = () => {
@@ -147,19 +149,19 @@ export default function Checkout() {
                   <div className="space-y-4">
                     <p className="text-[11px] font-bold text-gray-400 uppercase text-center mb-1">Pay Using UPI App</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => openApp("phonepe")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaff] border border-purple-100 hover:bg-purple-50 transition-all group">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/PhonePe_Logo.svg" alt="PhonePe" className="h-5 w-5" />
+                      <button onClick={() => openApp("phonepe")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaff] border border-purple-100 hover:bg-purple-50 transition-all group active:scale-95">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16 13H13V16H11V13H8V11H11V8H13V11H16V13Z" fill="#5f259f"/></svg>
                         <span className="text-[13px] font-black text-purple-700">PhonePe</span>
                       </button>
-                      <button onClick={() => openApp("gpay")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8faff] border border-blue-100 hover:bg-blue-50 transition-all">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" className="h-5 w-5" />
+                      <button onClick={() => openApp("gpay")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8faff] border border-blue-100 hover:bg-blue-50 transition-all active:scale-95">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5"><path d="M12.2 2C6.58 2 2 6.58 2 12.2C2 17.82 6.58 22.4 12.2 22.4C17.82 22.4 22.4 17.82 22.4 12.2C22.4 6.58 17.82 2 12.2 2Z" fill="#4285F4"/><path d="M17.4 12.2C17.4 11.72 17.36 11.24 17.28 10.78H12.2V13.82H15.12C15 14.48 14.62 15.02 14.06 15.4V17.38H16.7C18.24 15.96 19.12 13.86 19.12 11.38C19.12 11.66 19.1 11.94 19.08 12.22L17.4 12.2Z" fill="#FFF"/></svg>
                         <span className="text-[13px] font-black text-blue-700">Google Pay</span>
                       </button>
-                      <button onClick={() => openApp("paytm")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8fbff] border border-sky-100 hover:bg-sky-50 transition-all">
-                        <span className="h-5 w-5 flex items-center justify-center font-black text-sky-600 text-[10px]">PTM</span>
+                      <button onClick={() => openApp("paytm")} className="flex items-center gap-3 p-3 rounded-xl bg-[#f8fbff] border border-sky-100 hover:bg-sky-50 transition-all active:scale-95">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5"><path d="M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z" fill="#00baf2"/><path d="M10.85 15.22h1.65v-1.65h-1.65v1.65zm0-2.475h1.65V8.62h-1.65v4.125z" fill="#fff"/></svg>
                         <span className="text-[13px] font-black text-sky-700">Paytm</span>
                       </button>
-                      <button onClick={() => setPaymentView("qr")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fafafa] border border-gray-100 hover:bg-gray-50 transition-all">
+                      <button onClick={() => setPaymentView("qr")} className="flex items-center gap-3 p-3 rounded-xl bg-[#fafafa] border border-gray-100 hover:bg-gray-50 transition-all active:scale-95">
                         <QrCode className="h-5 w-5 text-gray-600" />
                         <span className="text-[13px] font-black text-gray-700">Scan QR</span>
                       </button>
