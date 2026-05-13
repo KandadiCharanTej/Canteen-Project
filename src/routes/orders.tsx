@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/orders")({
   component: OrdersPage,
-  validateSearch: (s: Record<string, unknown>) => ({ highlight: (s.highlight as string) || "" }),
+  validateSearch: (search: Record<string, unknown>): { highlight?: string } => {
+    return { highlight: search.highlight as string };
+  },
 });
 
 function OrdersPage() {
