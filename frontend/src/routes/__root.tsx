@@ -75,10 +75,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "QuickBite — Skip the Queue, Order Smart" },
-      { name: "description", content: "Smart Campus Food Operating System. Pre-order canteen meals, skip the lunch queue, pay with UPI, and pick up with an OTP." },
+      {
+        name: "description",
+        content:
+          "Smart Campus Food Operating System. Pre-order canteen meals, skip the lunch queue, pay with UPI, and pick up with an OTP.",
+      },
       { name: "author", content: "QuickBite" },
       { property: "og:title", content: "QuickBite — Smart Campus Food OS" },
-      { property: "og:description", content: "Pre-order, pay with UPI, pick up with OTP. Built for campus." },
+      {
+        property: "og:description",
+        content: "Pre-order, pay with UPI, pick up with OTP. Built for campus.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },

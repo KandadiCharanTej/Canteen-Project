@@ -43,11 +43,20 @@ const CartCtx = createContext<Ctx | null>(null);
 
 const lsGet = <T,>(k: string, fb: T): T => {
   if (typeof window === "undefined") return fb;
-  try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; }
+  try {
+    const v = localStorage.getItem(k);
+    return v ? JSON.parse(v) : fb;
+  } catch {
+    return fb;
+  }
 };
 const lsSet = (k: string, v: unknown) => {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* empty */ }
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch {
+    /* empty */
+  }
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -63,9 +72,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
   }, []);
 
-  useEffect(() => { if (hydrated) lsSet("qb_cart", cart); }, [cart, hydrated]);
-  useEffect(() => { if (hydrated) lsSet("qb_user", user); }, [user, hydrated]);
-  useEffect(() => { if (hydrated) lsSet("qb_orders", orders); }, [orders, hydrated]);
+  useEffect(() => {
+    if (hydrated) lsSet("qb_cart", cart);
+  }, [cart, hydrated]);
+  useEffect(() => {
+    if (hydrated) lsSet("qb_user", user);
+  }, [user, hydrated]);
+  useEffect(() => {
+    if (hydrated) lsSet("qb_orders", orders);
+  }, [orders, hydrated]);
 
   const add = (f: Food) =>
     setCart((c) => {
@@ -75,7 +90,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   const remove = (id: string) => setCart((c) => c.filter((i) => i.food.id !== id));
   const setQty = (id: string, q: number) =>
-    setCart((c) => (q <= 0 ? c.filter((i) => i.food.id !== id) : c.map((i) => (i.food.id === id ? { ...i, qty: q } : i))));
+    setCart((c) =>
+      q <= 0
+        ? c.filter((i) => i.food.id !== id)
+        : c.map((i) => (i.food.id === id ? { ...i, qty: q } : i)),
+    );
   const clear = () => setCart([]);
   const total = cart.reduce((s, i) => s + i.food.price * i.qty, 0);
   const count = cart.reduce((s, i) => s + i.qty, 0);
@@ -97,7 +116,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setOrders((os) => os.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
   return (
-    <CartCtx.Provider value={{ cart, add, remove, setQty, clear, total, count, user, setUser, orders, placeOrder, updateOrder }}>
+    <CartCtx.Provider
+      value={{
+        cart,
+        add,
+        remove,
+        setQty,
+        clear,
+        total,
+        count,
+        user,
+        setUser,
+        orders,
+        placeOrder,
+        updateOrder,
+      }}
+    >
       {children}
     </CartCtx.Provider>
   );

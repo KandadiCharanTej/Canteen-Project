@@ -8,12 +8,20 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+frontend/node_modules
 dist
+frontend/dist
 dist-ssr
+frontend/dist-ssr
 .output
+frontend/.output
 .vinxi
+frontend/.vinxi
 .tanstack/**
+frontend/.tanstack/**
 .nitro
+frontend/.nitro
+
 *.local
 
 # Wrangler / Cloudflare

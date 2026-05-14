@@ -23,8 +23,13 @@ export function FoodCard({ food }: { food: Food }) {
           src={food.image}
           alt={food.name}
           loading="lazy"
-          className={cn("h-full w-full object-cover transition duration-500 group-hover:scale-105", !food.inStock && "grayscale opacity-70")}
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          className={cn(
+            "h-full w-full object-cover transition duration-500 group-hover:scale-105",
+            !food.inStock && "grayscale opacity-70",
+          )}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
         />
         <div className="absolute top-1.5 left-1.5 bg-white/95 rounded-md p-1 shadow-sm">
           <VegBadge veg={food.veg} />
@@ -36,7 +41,9 @@ export function FoodCard({ food }: { food: Food }) {
         )}
         {!food.inStock && (
           <div className="absolute inset-0 grid place-items-center bg-black/35">
-            <span className="bg-card text-foreground text-[10px] font-semibold px-2 py-1 rounded-md uppercase tracking-wider">Sold Out</span>
+            <span className="bg-card text-foreground text-[10px] font-semibold px-2 py-1 rounded-md uppercase tracking-wider">
+              Sold Out
+            </span>
           </div>
         )}
       </div>
@@ -65,9 +72,19 @@ export function FoodCard({ food }: { food: Food }) {
             </button>
           ) : (
             <div className="shrink-0 inline-flex items-center bg-primary text-primary-foreground rounded-lg h-7 text-[11px] font-semibold">
-              <button onClick={() => setQty(food.id, qty - 1)} className="h-7 w-7 grid place-items-center active:scale-90 transition"><Minus className="h-3 w-3" /></button>
+              <button
+                onClick={() => setQty(food.id, qty - 1)}
+                className="h-7 w-7 grid place-items-center active:scale-90 transition"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
               <span className="w-5 text-center">{qty}</span>
-              <button onClick={() => setQty(food.id, qty + 1)} className="h-7 w-7 grid place-items-center active:scale-90 transition"><Plus className="h-3 w-3" /></button>
+              <button
+                onClick={() => setQty(food.id, qty + 1)}
+                className="h-7 w-7 grid place-items-center active:scale-90 transition"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
             </div>
           )}
         </div>
