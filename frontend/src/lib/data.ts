@@ -209,7 +209,7 @@ function generateSlots(startHour: number, startMin: number, endHour: number, end
     const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
     const displayM = m.toString().padStart(2, '0');
     slots.push(`${displayH}:${displayM} ${ampm}`);
-    m += 5;
+    m += 10;
     if (m >= 60) {
       m -= 60;
       h += 1;

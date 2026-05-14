@@ -42,6 +42,8 @@ type Ctx = {
   orders: Order[];
   placeOrder: (o: Omit<Order, "id" | "createdAt" | "otp" | "status">) => Order;
   updateOrder: (id: string, patch: Partial<Order>) => void;
+  logout: () => void;
+  updateProfile: (patch: Partial<QuickBiteUser>) => void;
 };
 
 const CartCtx = createContext<Ctx | null>(null);
@@ -122,6 +124,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateOrder = (id: string, patch: Partial<Order>) =>
     setOrders((os) => os.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
+  const logout = () => setUserState(null);
+  const updateProfile = (patch: Partial<QuickBiteUser>) => {
+    setUserState(prev => prev ? { ...prev, ...patch } : null);
+  };
+
   return (
     <CartCtx.Provider
       value={{
@@ -137,6 +144,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         orders,
         placeOrder,
         updateOrder,
+        logout,
+        updateProfile,
       }}
     >
       {children}
