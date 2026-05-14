@@ -23,10 +23,10 @@ const STATUSES: { key: Order["status"]; label: string; color: string }[] = [
   {
     key: "Payment Checking",
     label: "Payment",
-    color: "bg-warning/15 text-warning-foreground border-warning/30",
+    color: "bg-warning/10 text-warning-foreground border-warning/20",
   },
-  { key: "Preparing", label: "Preparing", color: "bg-primary/15 text-primary border-primary/30" },
-  { key: "Ready", label: "Ready", color: "bg-success/15 text-success border-success/30" },
+  { key: "Preparing", label: "Preparing", color: "bg-primary/10 text-primary border-primary/20" },
+  { key: "Ready", label: "Ready", color: "bg-success/10 text-success border-success/20" },
   { key: "Completed", label: "Done", color: "bg-muted text-muted-foreground border-border" },
 ];
 
@@ -45,57 +45,57 @@ function AdminOrders() {
   const visible = filter === "All" ? orders : orders.filter((o) => o.status === filter);
 
   return (
-    <div className="mx-auto max-w-[2500px] px-8 sm:px-24 py-12 sm:py-24 space-y-16">
-      <div className="flex items-center justify-between">
-        <div className="space-y-4">
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tighter">Live Command Center</h1>
-          <p className="text-xl sm:text-3xl text-muted-foreground font-bold opacity-60">
-            {orders.length} total orders · Real-time campus fulfillment
+    <div className="mx-auto max-w-7xl px-4 sm:px-8 py-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Live Orders</h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            {orders.length} total orders · Command Center
           </p>
         </div>
       </div>
 
       {/* Status counters */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 sm:gap-10">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <button
           onClick={() => setFilter("All")}
           className={cn(
-            "p-8 sm:p-12 rounded-[3rem] border-4 text-left transition-all duration-500",
+            "p-4 rounded-2xl border text-left transition-all",
             filter === "All"
-              ? "border-primary bg-primary/5 shadow-3xl shadow-primary/10 scale-105"
-              : "border-border/40 bg-card hover:border-primary/40 shadow-xl",
+              ? "border-primary bg-primary/5 shadow-sm"
+              : "border-border bg-card hover:border-primary/30",
           )}
         >
-          <div className="text-[14px] uppercase font-black tracking-[0.4em] text-muted-foreground/40 mb-4">Total Active</div>
-          <div className="text-6xl sm:text-8xl font-black tracking-tighter">{orders.length}</div>
+          <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-1">All Active</div>
+          <div className="text-2xl font-bold">{orders.length}</div>
         </button>
         {STATUSES.map((s) => (
           <button
             key={s.key}
             onClick={() => setFilter(s.key)}
             className={cn(
-              "p-8 sm:p-12 rounded-[3rem] border-4 text-left transition-all duration-500",
+              "p-4 rounded-2xl border text-left transition-all",
               filter === s.key
-                ? "border-primary bg-primary/5 shadow-3xl shadow-primary/10 scale-105"
-                : "border-border/40 bg-card hover:border-primary/40 shadow-xl",
+                ? "border-primary bg-primary/5 shadow-sm"
+                : "border-border bg-card hover:border-primary/30",
             )}
           >
-            <div className="text-[14px] uppercase font-black tracking-[0.4em] text-muted-foreground/40 mb-4">
+            <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-1">
               {s.label}
             </div>
-            <div className="text-6xl sm:text-8xl font-black tracking-tighter">{counts[s.key]}</div>
+            <div className="text-2xl font-bold">{counts[s.key]}</div>
           </button>
         ))}
       </div>
 
       {/* Cards */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-12 sm:gap-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {visible.length === 0 && (
-          <div className="col-span-full py-60 text-center space-y-10 bg-muted/10 rounded-[6rem] border-4 border-dashed border-border/40">
-            <div className="text-[12rem] opacity-10">📥</div>
-            <div className="space-y-4">
-               <h2 className="text-5xl font-black tracking-tighter">No {filter} orders</h2>
-               <p className="text-2xl text-muted-foreground font-bold opacity-60 uppercase tracking-widest">Awaiting new campus activity.</p>
+          <div className="col-span-full py-20 text-center space-y-4 bg-muted/30 rounded-3xl border border-dashed">
+            <div className="text-4xl opacity-50">📥</div>
+            <div>
+               <h2 className="text-lg font-bold">No {filter} orders</h2>
+               <p className="text-sm text-muted-foreground">Awaiting new campus activity.</p>
             </div>
           </div>
         )}
@@ -130,7 +130,7 @@ function AdminOrderCard({
     Order["status"],
     { label: string; status: Order["status"]; icon: typeof IndianRupee } | null
   > = {
-    "Payment Checking": { label: "Payment Verified", status: "Preparing", icon: IndianRupee },
+    "Payment Checking": { label: "Verify Payment", status: "Preparing", icon: IndianRupee },
     Preparing: { label: "Mark Ready", status: "Ready", icon: BellRing },
     Ready: { label: "Complete Pickup", status: "Completed", icon: CheckCircle2 },
     Completed: null,
@@ -140,60 +140,62 @@ function AdminOrderCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9, y: 40 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      className="bg-card border-4 border-border rounded-[4rem] p-10 sm:p-16 flex flex-col gap-10 shadow-xl hover:shadow-3xl transition-all relative overflow-hidden"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="bg-card border rounded-2xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-8 relative z-10">
-        <div className="min-w-0 space-y-2">
-          <div className="text-[16px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">Order #{order.id}</div>
-          <div className="text-4xl sm:text-5xl font-black truncate tracking-tighter">{order.customerName}</div>
-          <div className="text-xl text-muted-foreground font-bold inline-flex items-center gap-3">
-            <Phone className="h-6 w-6 text-primary" /> {order.customerPhone}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">#{order.id}</span>
+             <span
+               className={cn(
+                 "text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                 STATUSES.find((s) => s.key === order.status)?.color,
+               )}
+             >
+               {order.status}
+             </span>
+          </div>
+          <div className="text-lg font-bold truncate">{order.customerName}</div>
+          <div className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+            <Phone className="h-4 w-4" /> {order.customerPhone}
           </div>
         </div>
-        <span
-          className={cn(
-            "text-[14px] font-black uppercase tracking-[0.3em] px-8 py-3 rounded-2xl border-2 shadow-xl",
-            STATUSES.find((s) => s.key === order.status)?.color,
-          )}
-        >
-          {order.status}
-        </span>
       </div>
 
-      <div className="flex items-center gap-8 text-2xl font-black relative z-10">
-        <span className="inline-flex items-center gap-4 bg-primary/10 text-primary px-8 py-4 rounded-3xl border-2 border-primary/20">
-          <Clock className="h-8 w-8" /> {order.pickupTime}
+      <div className="flex items-center gap-3 text-sm font-bold">
+        <span className="inline-flex items-center gap-1.5 bg-muted px-2 py-1 rounded-md">
+          <Clock className="h-4 w-4 text-primary" /> {order.pickupTime}
         </span>
-        <span className="text-muted-foreground/20">·</span>
-        <span className="text-4xl">₹{order.total}</span>
+        <span className="text-muted-foreground">•</span>
+        <span className="text-base text-foreground">₹{order.total}</span>
       </div>
 
-      <div className="bg-muted/30 rounded-[3rem] p-10 space-y-4 shadow-inner relative z-10">
+      <div className="bg-muted/50 rounded-xl p-3 space-y-2 border">
         {order.items.map((i) => (
-          <div key={i.food.id} className="flex justify-between items-center text-2xl font-bold">
-            <span className="truncate pr-4 opacity-80">{i.food.name}</span>
-            <span className="font-black shrink-0 text-primary">× {i.qty}</span>
+          <div key={i.food.id} className="flex justify-between items-center text-sm">
+            <span className="truncate pr-2 font-medium">{i.food.name}</span>
+            <span className="font-bold text-primary shrink-0">x{i.qty}</span>
           </div>
         ))}
       </div>
 
       {order.instructions && (
-        <div className="bg-amber-500/5 border-2 border-amber-500/20 rounded-[2.5rem] p-10 text-2xl font-bold flex gap-6 italic relative z-10">
-          <MessageSquare className="h-8 w-8 shrink-0 mt-1 text-amber-600" />
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-sm font-medium flex gap-2 italic">
+          <MessageSquare className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
           <span>"{order.instructions}"</span>
         </div>
       )}
 
-      <div className="flex items-center gap-8 bg-foreground text-background border-4 border-foreground rounded-[3rem] px-12 py-8 shadow-2xl relative z-10">
-        <KeyRound className="h-10 w-10 text-primary" />
+      <div className="flex items-center gap-4 bg-foreground text-background rounded-xl p-4 shadow-sm">
+        <KeyRound className="h-6 w-6 text-primary" />
         <div className="flex-1">
-          <div className="text-[14px] uppercase tracking-[0.5em] font-black opacity-40 mb-2">
-            Pickup Authorization Token
+          <div className="text-[10px] uppercase tracking-widest font-bold opacity-60">
+            Pickup Token
           </div>
-          <div className="text-6xl sm:text-7xl font-black tracking-[0.5em] leading-none">
+          <div className="text-2xl font-bold tracking-widest">
             {order.otp}
           </div>
         </div>
@@ -202,18 +204,16 @@ function AdminOrderCard({
       {action && (
         <button
           onClick={() => onAction(action.status)}
-          className="w-full h-24 sm:h-28 rounded-[3rem] bg-primary text-white font-black text-2xl inline-flex items-center justify-center gap-8 shadow-3xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all relative z-10"
+          className="w-full h-11 rounded-xl bg-primary text-white font-bold text-sm shadow-sm hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-auto"
         >
           {action.status === "Preparing" ? (
-            <ChefHat className="h-10 w-10" />
+            <ChefHat className="h-4 w-4" />
           ) : (
-            <action.icon className="h-10 w-10" />
+            <action.icon className="h-4 w-4" />
           )}
           {action.label}
         </button>
       )}
-
-      <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
     </motion.div>
   );
 }

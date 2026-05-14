@@ -7,7 +7,6 @@ import {
   Check,
   Loader2,
   ShieldCheck,
-  Smartphone,
   ChevronRight,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -60,88 +59,96 @@ function PaymentPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center">
-      <header className="w-full max-w-5xl px-4 sm:px-8 h-16 sm:h-20 flex items-center gap-4 border-b bg-card sticky top-0 z-40">
+      <header className="w-full max-w-3xl px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3 border-b bg-card sticky top-0 z-40">
         <button onClick={() => navigate({ to: "/cart" })} className="p-2 hover:bg-muted rounded-lg transition-all"><ArrowLeft className="h-5 w-5" /></button>
-        <h1 className="font-bold text-lg">Secure Payment</h1>
-        <div className="ml-auto flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/5 px-3 py-1 rounded-full border border-primary/20 uppercase tracking-widest">
+        <h1 className="font-bold text-lg">Payment</h1>
+        <div className="ml-auto flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 uppercase tracking-widest">
           <ShieldCheck className="h-3 w-3" /> Secure
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-5xl p-4 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        <div className="space-y-8">
-          <div className="bg-card border rounded-2xl p-8 text-center space-y-4">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Payable Amount</p>
-            <h1 className="text-5xl font-bold text-primary">₹{grand}</h1>
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <span className="text-[10px] font-bold bg-muted px-2 py-1 rounded uppercase tracking-widest">{cart.length} Items</span>
-              <span className="text-[10px] font-bold bg-muted px-2 py-1 rounded uppercase tracking-widest">Pickup: {pickup}</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">UPI Apps</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {apps.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => setOpening(a.id)}
-                  className="bg-card border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary/40 transition-all group"
-                >
-                  <span className="text-2xl">{a.emoji}</span>
-                  <span className="text-xs font-bold">{a.name}</span>
-                </button>
-              ))}
-            </div>
+      <main className="flex-1 w-full max-w-3xl p-4 sm:p-6 space-y-6">
+        <div className="bg-card border rounded-2xl p-6 text-center space-y-2 shadow-sm">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">To Pay</p>
+          <h1 className="text-4xl font-bold text-foreground">₹{grand}</h1>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <span className="text-xs font-medium text-muted-foreground">{cart.length} Items</span>
+            <span className="text-xs font-medium text-muted-foreground">•</span>
+            <span className="text-xs font-medium text-muted-foreground">Pickup: {pickup}</span>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-card border rounded-2xl p-6 text-center space-y-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Scan QR Code</h2>
-            <div className="mx-auto h-48 w-48 bg-muted rounded-xl p-4 flex items-center justify-center relative border-2 border-dashed border-border">
-               <div className="text-xs font-bold text-muted-foreground opacity-20">QR CODE</div>
-               <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs shadow-lg">QB</div>
-               </div>
-            </div>
-            <button
-              onClick={() => { navigator.clipboard.writeText(UPI_ID); setCopied(true); toast.success("Copied!"); setTimeout(() => setCopied(false), 2000); }}
-              className="w-full flex items-center justify-between h-10 px-4 rounded-xl bg-muted/50 text-xs font-bold"
-            >
-              <span className="opacity-40">UPI ID</span>
-              <span className="flex items-center gap-2">{copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />} {UPI_ID}</span>
-            </button>
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-foreground px-1">Pay via UPI</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {apps.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => setOpening(a.id)}
+                className="bg-card border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary/40 hover:shadow-sm transition-all group"
+              >
+                <span className="text-2xl">{a.emoji}</span>
+                <span className="text-xs font-bold">{a.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card border rounded-2xl p-5 space-y-5 shadow-sm">
+          <div className="flex items-center justify-between">
+             <h2 className="text-sm font-bold">Scan QR Code</h2>
+          </div>
+          
+          <div className="mx-auto h-40 w-40 bg-muted/30 rounded-xl p-3 flex items-center justify-center relative border border-dashed border-border/60">
+             <div className="text-[10px] font-bold text-muted-foreground opacity-30">SCAN TO PAY</div>
+             <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs shadow-md">QB</div>
+             </div>
           </div>
 
-          <button
-            onClick={finalizeOrder}
-            className="w-full h-12 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-600/20 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            I Have Paid Successfully <ChevronRight className="h-4 w-4" />
-          </button>
+          <div className="flex flex-col gap-2 pt-2 border-t">
+             <p className="text-xs font-medium text-muted-foreground">Or pay via UPI ID:</p>
+             <button
+               onClick={() => { navigator.clipboard.writeText(UPI_ID); setCopied(true); toast.success("Copied!"); setTimeout(() => setCopied(false), 2000); }}
+               className="w-full flex items-center justify-between h-10 px-4 rounded-xl bg-muted/50 border hover:bg-muted text-sm font-medium transition-all"
+             >
+               <span className="text-foreground">{UPI_ID}</span>
+               {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+             </button>
+          </div>
         </div>
+
+        <button
+          onClick={finalizeOrder}
+          className="w-full h-12 rounded-xl bg-green-600 text-white font-bold text-sm shadow-md hover:bg-green-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          Confirm Payment <ChevronRight className="h-4 w-4" />
+        </button>
       </main>
 
       <AnimatePresence>
         {opening && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xl flex items-center justify-center p-4">
-            <div className="bg-card border rounded-3xl p-8 text-center shadow-xl space-y-4 max-w-sm">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-              <h3 className="font-bold">Opening UPI App...</h3>
-              <p className="text-xs text-muted-foreground">Please complete the payment and return here.</p>
-              <button onClick={() => setOpening(null)} className="text-primary text-xs font-bold">Cancel</button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-card border rounded-2xl p-6 text-center shadow-lg space-y-4 max-w-[280px] w-full">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+              <div className="space-y-1">
+                 <h3 className="text-sm font-bold">Opening UPI App</h3>
+                 <p className="text-xs text-muted-foreground">Complete payment securely.</p>
+              </div>
+              <button onClick={() => setOpening(null)} className="w-full h-9 rounded-lg border text-xs font-bold hover:bg-muted">Cancel</button>
             </div>
           </motion.div>
         )}
         {completed && (
-          <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex items-center justify-center p-4">
             <div className="text-center space-y-4">
-               <div className="h-16 w-16 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto shadow-xl">
-                 <Check className="h-8 w-8 stroke-[4px]" />
+               <div className="h-14 w-14 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
+                 <Check className="h-6 w-6 stroke-[3px]" />
                </div>
-               <h2 className="text-2xl font-bold">Order Confirmed!</h2>
-               <p className="text-sm text-muted-foreground">Redirecting to history...</p>
+               <div className="space-y-1">
+                  <h2 className="text-xl font-bold">Order Confirmed</h2>
+                  <p className="text-sm text-muted-foreground">Redirecting...</p>
+               </div>
             </div>
           </div>
         )}

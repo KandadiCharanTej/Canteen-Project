@@ -11,62 +11,68 @@ export function FoodCard({ food }: { food: Food }) {
   const qty = item?.qty ?? 0;
 
   return (
-    <div className="bg-card rounded-2xl border border-border/60 flex flex-col overflow-hidden hover:shadow-lg transition-all group">
-      <div className="relative aspect-video w-full overflow-hidden">
+    <div className="bg-card rounded-2xl border p-3 flex gap-4 hover:shadow-md transition-all group relative">
+      {/* Small Thumbnail */}
+      <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden shrink-0 bg-muted">
         <img
           src={food.image}
           alt={food.name}
           className={cn(
-            "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+            "h-full w-full object-cover transition-transform duration-500 group-hover:scale-110",
             !food.inStock && "grayscale opacity-50",
           )}
         />
-        <div className="absolute top-3 left-3 flex items-center gap-2">
-           <div className="bg-white/90 p-1.5 rounded-lg shadow-sm">
-              <VegBadge veg={food.veg} />
-           </div>
-        </div>
         {!food.inStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px]">
-            <span className="bg-destructive text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-              Out of Stock
+            <span className="bg-destructive text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm uppercase tracking-wider">
+              Sold Out
             </span>
           </div>
         )}
       </div>
 
-      <div className="p-5 flex flex-col flex-1 gap-4">
-        <div className="flex justify-between items-start gap-2">
-          <div className="min-w-0">
-            <h3 className="text-lg font-bold truncate leading-tight">{food.name}</h3>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{food.category}</p>
+      {/* Content */}
+      <div className="flex flex-col flex-1 py-0.5">
+        <div className="flex items-start gap-2">
+          <div className="mt-1 shrink-0">
+            <VegBadge veg={food.veg} />
           </div>
-          <p className="text-xl font-bold text-primary shrink-0">₹{food.price}</p>
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold truncate leading-tight">{food.name}</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-medium uppercase tracking-wider">
+              {food.category}
+            </p>
+          </div>
         </div>
 
-        <div className="mt-auto pt-2">
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-sm sm:text-base font-bold text-foreground">₹{food.price}</p>
+        </div>
+
+        {/* Action Button - Bottom Right Align */}
+        <div className="mt-auto flex justify-end">
           {qty === 0 ? (
             <button
               disabled={!food.inStock}
               onClick={() => add(food)}
-              className="w-full h-10 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-2"
+              className="h-8 px-6 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground"
             >
-              <Plus className="h-4 w-4" /> Add
+              ADD
             </button>
           ) : (
-            <div className="flex items-center justify-between bg-muted rounded-xl h-10 p-1 border">
+            <div className="flex items-center justify-between bg-primary/10 text-primary rounded-lg h-8 px-1 border border-primary/20 shadow-sm w-[90px]">
               <button
                 onClick={() => setQty(food.id, qty - 1)}
-                className="h-8 w-8 flex items-center justify-center hover:bg-background rounded-lg transition-all active:scale-90"
+                className="h-6 w-6 flex items-center justify-center hover:bg-white rounded-md transition-all active:scale-90"
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-3 w-3" />
               </button>
-              <span className="text-sm font-bold tabular-nums">{qty}</span>
+              <span className="text-xs font-bold tabular-nums">{qty}</span>
               <button
                 onClick={() => setQty(food.id, qty + 1)}
-                className="h-8 w-8 flex items-center justify-center hover:bg-background rounded-lg transition-all active:scale-90"
+                className="h-6 w-6 flex items-center justify-center hover:bg-white rounded-md transition-all active:scale-90"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
               </button>
             </div>
           )}
