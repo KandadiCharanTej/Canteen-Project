@@ -45,60 +45,61 @@ function AdminOrders() {
   const visible = filter === "All" ? orders : orders.filter((o) => o.status === filter);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-4">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-base font-semibold">Live Orders</h1>
-          <p className="text-[11px] text-muted-foreground">
-            {orders.length} total · refresh as new orders arrive
+    <div className="mx-auto max-w-[2500px] px-8 sm:px-24 py-12 sm:py-24 space-y-16">
+      <div className="flex items-center justify-between">
+        <div className="space-y-4">
+          <h1 className="text-5xl sm:text-7xl font-black tracking-tighter">Live Command Center</h1>
+          <p className="text-xl sm:text-3xl text-muted-foreground font-bold opacity-60">
+            {orders.length} total orders · Real-time campus fulfillment
           </p>
         </div>
       </div>
 
       {/* Status counters */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 sm:gap-10">
         <button
           onClick={() => setFilter("All")}
           className={cn(
-            "p-2.5 rounded-xl border text-left transition",
+            "p-8 sm:p-12 rounded-[3rem] border-4 text-left transition-all duration-500",
             filter === "All"
-              ? "border-primary bg-primary/5"
-              : "border-border bg-card hover:border-primary/40",
+              ? "border-primary bg-primary/5 shadow-3xl shadow-primary/10 scale-105"
+              : "border-border/40 bg-card hover:border-primary/40 shadow-xl",
           )}
         >
-          <div className="text-[10px] uppercase font-semibold text-muted-foreground">All</div>
-          <div className="text-xl font-bold">{orders.length}</div>
+          <div className="text-[14px] uppercase font-black tracking-[0.4em] text-muted-foreground/40 mb-4">Total Active</div>
+          <div className="text-6xl sm:text-8xl font-black tracking-tighter">{orders.length}</div>
         </button>
         {STATUSES.map((s) => (
           <button
             key={s.key}
             onClick={() => setFilter(s.key)}
             className={cn(
-              "p-2.5 rounded-xl border text-left transition",
+              "p-8 sm:p-12 rounded-[3rem] border-4 text-left transition-all duration-500",
               filter === s.key
-                ? "border-primary bg-primary/5"
-                : "border-border bg-card hover:border-primary/40",
+                ? "border-primary bg-primary/5 shadow-3xl shadow-primary/10 scale-105"
+                : "border-border/40 bg-card hover:border-primary/40 shadow-xl",
             )}
           >
-            <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+            <div className="text-[14px] uppercase font-black tracking-[0.4em] text-muted-foreground/40 mb-4">
               {s.label}
             </div>
-            <div className="text-xl font-bold">{counts[s.key]}</div>
+            <div className="text-6xl sm:text-8xl font-black tracking-tighter">{counts[s.key]}</div>
           </button>
         ))}
       </div>
 
       {/* Cards */}
-      <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-12 sm:gap-20">
         {visible.length === 0 && (
-          <div className="col-span-full text-center text-sm text-muted-foreground py-12">
-            No orders to show.{" "}
-            <span className="block text-[11px] mt-1">
-              When students order, they'll appear here.
-            </span>
+          <div className="col-span-full py-60 text-center space-y-10 bg-muted/10 rounded-[6rem] border-4 border-dashed border-border/40">
+            <div className="text-[12rem] opacity-10">📥</div>
+            <div className="space-y-4">
+               <h2 className="text-5xl font-black tracking-tighter">No {filter} orders</h2>
+               <p className="text-2xl text-muted-foreground font-bold opacity-60 uppercase tracking-widest">Awaiting new campus activity.</p>
+            </div>
           </div>
         )}
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {visible.map((o) => (
             <AdminOrderCard
               key={o.id}
@@ -129,9 +130,9 @@ function AdminOrderCard({
     Order["status"],
     { label: string; status: Order["status"]; icon: typeof IndianRupee } | null
   > = {
-    "Payment Checking": { label: "Payment Received", status: "Preparing", icon: IndianRupee },
+    "Payment Checking": { label: "Payment Verified", status: "Preparing", icon: IndianRupee },
     Preparing: { label: "Mark Ready", status: "Ready", icon: BellRing },
-    Ready: { label: "Complete Order", status: "Completed", icon: CheckCircle2 },
+    Ready: { label: "Complete Pickup", status: "Completed", icon: CheckCircle2 },
     Completed: null,
   };
   const action = next[order.status];
@@ -139,22 +140,22 @@ function AdminOrderCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-card border border-border rounded-2xl p-3 flex flex-col gap-2.5 shadow-[var(--shadow-soft)]"
+      initial={{ opacity: 0, scale: 0.9, y: 40 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className="bg-card border-4 border-border rounded-[4rem] p-10 sm:p-16 flex flex-col gap-10 shadow-xl hover:shadow-3xl transition-all relative overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-[11px] text-muted-foreground">#{order.id}</div>
-          <div className="text-[14px] font-semibold truncate">{order.customerName}</div>
-          <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
-            <Phone className="h-3 w-3" /> {order.customerPhone}
+      <div className="flex items-start justify-between gap-8 relative z-10">
+        <div className="min-w-0 space-y-2">
+          <div className="text-[16px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">Order #{order.id}</div>
+          <div className="text-4xl sm:text-5xl font-black truncate tracking-tighter">{order.customerName}</div>
+          <div className="text-xl text-muted-foreground font-bold inline-flex items-center gap-3">
+            <Phone className="h-6 w-6 text-primary" /> {order.customerPhone}
           </div>
         </div>
         <span
           className={cn(
-            "text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md border",
+            "text-[14px] font-black uppercase tracking-[0.3em] px-8 py-3 rounded-2xl border-2 shadow-xl",
             STATUSES.find((s) => s.key === order.status)?.color,
           )}
         >
@@ -162,37 +163,37 @@ function AdminOrderCard({
         </span>
       </div>
 
-      <div className="flex items-center gap-3 text-[12px]">
-        <span className="inline-flex items-center gap-1 font-semibold">
-          <Clock className="h-3.5 w-3.5 text-primary" /> {order.pickupTime}
+      <div className="flex items-center gap-8 text-2xl font-black relative z-10">
+        <span className="inline-flex items-center gap-4 bg-primary/10 text-primary px-8 py-4 rounded-3xl border-2 border-primary/20">
+          <Clock className="h-8 w-8" /> {order.pickupTime}
         </span>
-        <span className="text-muted-foreground">·</span>
-        <span className="font-semibold">₹{order.total}</span>
+        <span className="text-muted-foreground/20">·</span>
+        <span className="text-4xl">₹{order.total}</span>
       </div>
 
-      <div className="bg-muted/50 rounded-lg p-2 space-y-1">
+      <div className="bg-muted/30 rounded-[3rem] p-10 space-y-4 shadow-inner relative z-10">
         {order.items.map((i) => (
-          <div key={i.food.id} className="flex justify-between text-[12px]">
-            <span className="truncate">{i.food.name}</span>
-            <span className="font-semibold shrink-0 ml-2">× {i.qty}</span>
+          <div key={i.food.id} className="flex justify-between items-center text-2xl font-bold">
+            <span className="truncate pr-4 opacity-80">{i.food.name}</span>
+            <span className="font-black shrink-0 text-primary">× {i.qty}</span>
           </div>
         ))}
       </div>
 
       {order.instructions && (
-        <div className="bg-warning/10 border border-warning/30 rounded-lg p-2 text-[11px] flex gap-1.5">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5 text-warning-foreground" />
-          <span>{order.instructions}</span>
+        <div className="bg-amber-500/5 border-2 border-amber-500/20 rounded-[2.5rem] p-10 text-2xl font-bold flex gap-6 italic relative z-10">
+          <MessageSquare className="h-8 w-8 shrink-0 mt-1 text-amber-600" />
+          <span>"{order.instructions}"</span>
         </div>
       )}
 
-      <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5">
-        <KeyRound className="h-4 w-4 text-primary" />
+      <div className="flex items-center gap-8 bg-foreground text-background border-4 border-foreground rounded-[3rem] px-12 py-8 shadow-2xl relative z-10">
+        <KeyRound className="h-10 w-10 text-primary" />
         <div className="flex-1">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
-            Pickup OTP
+          <div className="text-[14px] uppercase tracking-[0.5em] font-black opacity-40 mb-2">
+            Pickup Authorization Token
           </div>
-          <div className="text-base font-bold tracking-[0.25em] text-primary leading-none">
+          <div className="text-6xl sm:text-7xl font-black tracking-[0.5em] leading-none">
             {order.otp}
           </div>
         </div>
@@ -201,16 +202,18 @@ function AdminOrderCard({
       {action && (
         <button
           onClick={() => onAction(action.status)}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center justify-center gap-2 active:scale-[0.99]"
+          className="w-full h-24 sm:h-28 rounded-[3rem] bg-primary text-white font-black text-2xl inline-flex items-center justify-center gap-8 shadow-3xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all relative z-10"
         >
           {action.status === "Preparing" ? (
-            <ChefHat className="h-4 w-4" />
+            <ChefHat className="h-10 w-10" />
           ) : (
-            <action.icon className="h-4 w-4" />
+            <action.icon className="h-10 w-10" />
           )}
           {action.label}
         </button>
       )}
+
+      <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
     </motion.div>
   );
 }

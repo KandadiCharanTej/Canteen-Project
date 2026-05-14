@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Minus, Star } from "lucide-react";
+import { Plus, Minus, PackageCheck, AlertTriangle, ArrowUpRight } from "lucide-react";
 import type { Food } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { VegBadge } from "./AppShell";
@@ -10,85 +10,115 @@ export function FoodCard({ food }: { food: Food }) {
   const item = cart.find((i) => i.food.id === food.id);
   const qty = item?.qty ?? 0;
 
+  const isLowStock = food.inStock && food.stockCount > 0 && food.stockCount <= 5;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className="group bg-card rounded-2xl overflow-hidden border border-border/70 shadow-[var(--shadow-soft)] hover:shadow-md transition"
+      layout
+      className="bg-card rounded-[3.5rem] border border-border/40 flex flex-col h-full shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 group relative overflow-hidden"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <img
+      {/* Premium Image Container */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
+        <motion.img
           src={food.image}
           alt={food.name}
           loading="lazy"
           className={cn(
-            "h-full w-full object-cover transition duration-500 group-hover:scale-105",
-            !food.inStock && "grayscale opacity-70",
+            "h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110",
+            !food.inStock && "grayscale opacity-40",
           )}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
         />
-        <div className="absolute top-1.5 left-1.5 bg-white/95 rounded-md p-1 shadow-sm">
-          <VegBadge veg={food.veg} />
+        
+        {/* Floating Badges */}
+        <div className="absolute top-6 left-6 flex items-center gap-2">
+           <div className="bg-white/90 backdrop-blur-md p-2 rounded-xl shadow-xl">
+              <VegBadge veg={food.veg} />
+           </div>
+           {food.tag && food.inStock && (
+              <span className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-xl">
+                {food.tag}
+              </span>
+           )}
         </div>
-        {food.tag && food.inStock && (
-          <span className="absolute top-1.5 right-1.5 text-[9px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md">
-            {food.tag}
-          </span>
-        )}
+
+        <div className="absolute bottom-6 right-6">
+           <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-500">
+              <ArrowUpRight className="h-6 w-6" />
+           </div>
+        </div>
+
         {!food.inStock && (
-          <div className="absolute inset-0 grid place-items-center bg-black/35">
-            <span className="bg-card text-foreground text-[10px] font-semibold px-2 py-1 rounded-md uppercase tracking-wider">
+          <div className="absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm">
+            <span className="bg-destructive text-white text-[12px] font-black px-6 py-2 rounded-full uppercase tracking-[0.2em] shadow-2xl">
               Sold Out
             </span>
           </div>
         )}
       </div>
 
-      <div className="p-2.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="text-[13px] font-semibold leading-tight truncate">{food.name}</h3>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="font-semibold text-foreground">₹{food.price}</span>
-              {food.rating && (
-                <span className="inline-flex items-center gap-0.5 text-success">
-                  <Star className="h-2.5 w-2.5 fill-current" /> {food.rating}
-                </span>
-              )}
+      {/* Content Section */}
+      <div className="p-8 sm:p-10 flex flex-col flex-1 gap-8">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-2xl sm:text-3xl font-black leading-tight tracking-tighter text-foreground group-hover:text-primary transition-colors">
+              {food.name}
+            </h3>
+            <div className="text-right shrink-0">
+               <p className="text-3xl sm:text-4xl font-black text-primary leading-none">₹{food.price}</p>
             </div>
           </div>
+          
+          <div className="flex items-center gap-4 text-[12px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">
+            <div className={cn(
+              "flex items-center gap-1.5",
+              !food.inStock ? "text-destructive" : isLowStock ? "text-amber-500" : "text-green-600"
+            )}>
+              {food.inStock ? (
+                <>
+                  {isLowStock ? <AlertTriangle className="h-4 w-4" /> : <PackageCheck className="h-4 w-4" />}
+                  {food.stockCount} Available
+                </>
+              ) : (
+                "Not available"
+              )}
+            </div>
+            <span className="h-1 w-1 rounded-full bg-foreground/20" />
+            <span>{food.category}</span>
+          </div>
+        </div>
 
+        {/* Action Section */}
+        <div className="mt-auto">
           {qty === 0 ? (
             <button
               disabled={!food.inStock}
               onClick={() => add(food)}
-              className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-95 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
+              className="w-full h-16 sm:h-20 rounded-[2rem] bg-primary text-white text-[16px] font-black hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3 shadow-xl shadow-primary/20"
             >
-              <Plus className="h-3 w-3" /> Add
+              <Plus className="h-5 w-5" /> Add to Tray
             </button>
           ) : (
-            <div className="shrink-0 inline-flex items-center bg-primary text-primary-foreground rounded-lg h-7 text-[11px] font-semibold">
+            <div className="flex items-center justify-between bg-primary text-white rounded-[2rem] h-16 sm:h-20 p-2 shadow-xl shadow-primary/20">
               <button
                 onClick={() => setQty(food.id, qty - 1)}
-                className="h-7 w-7 grid place-items-center active:scale-90 transition"
+                className="h-12 w-12 sm:h-16 sm:w-16 flex items-center justify-center hover:bg-white/10 rounded-[1.5rem] transition-all active:scale-90"
               >
-                <Minus className="h-3 w-3" />
+                <Minus className="h-5 w-5" />
               </button>
-              <span className="w-5 text-center">{qty}</span>
+              <span className="text-2xl font-black tabular-nums">{qty}</span>
               <button
                 onClick={() => setQty(food.id, qty + 1)}
-                className="h-7 w-7 grid place-items-center active:scale-90 transition"
+                className="h-12 w-12 sm:h-16 sm:w-16 flex items-center justify-center hover:bg-white/10 rounded-[1.5rem] transition-all active:scale-90"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-5 w-5" />
               </button>
             </div>
           )}
         </div>
       </div>
+      
+      {/* Hover Background Accent */}
+      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-primary/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
     </motion.div>
   );
 }

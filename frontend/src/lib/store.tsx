@@ -3,12 +3,15 @@ import type { Food } from "./data";
 
 export type CartItem = { food: Food; qty: number };
 
-export type User = {
+export type QuickBiteUser = {
   name: string;
   phone: string;
-  role: "Student" | "Lecturer";
-  department: string;
+  email: string;
+  classDept: string;
+  category: "Student" | "Lecturer";
+  auroraId?: string;
 };
+
 
 export type Order = {
   id: string;
@@ -22,6 +25,7 @@ export type Order = {
   createdAt: number;
   customerName: string;
   customerPhone: string;
+  customerEmail: string;
 };
 
 type Ctx = {
@@ -32,8 +36,9 @@ type Ctx = {
   clear: () => void;
   total: number;
   count: number;
-  user: User | null;
-  setUser: (u: User | null) => void;
+  user: QuickBiteUser | null;
+  setUser: (u: QuickBiteUser | null) => void;
+
   orders: Order[];
   placeOrder: (o: Omit<Order, "id" | "createdAt" | "otp" | "status">) => Order;
   updateOrder: (id: string, patch: Partial<Order>) => void;
@@ -61,7 +66,8 @@ const lsSet = (k: string, v: unknown) => {
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [user, setUserState] = useState<User | null>(null);
+  const [user, setUserState] = useState<QuickBiteUser | null>(null);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -99,7 +105,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const total = cart.reduce((s, i) => s + i.food.price * i.qty, 0);
   const count = cart.reduce((s, i) => s + i.qty, 0);
 
-  const setUser = (u: User | null) => setUserState(u);
+  const setUser = (u: QuickBiteUser | null) => setUserState(u);
+
 
   const placeOrder: Ctx["placeOrder"] = (o) => {
     const order: Order = {

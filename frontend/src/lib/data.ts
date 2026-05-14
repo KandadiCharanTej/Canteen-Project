@@ -9,6 +9,7 @@ export type Food = {
   emoji: string;
   image: string;
   inStock: boolean;
+  stockCount: number;
   rating?: number;
   tag?: string;
 };
@@ -34,6 +35,7 @@ export const foods: Food[] = [
     emoji: "🍛",
     image: img("photo-1546833999-b9f581a1996d"),
     inStock: true,
+    stockCount: 15,
     rating: 4.5,
     tag: "Bestseller",
   },
@@ -46,6 +48,7 @@ export const foods: Food[] = [
     emoji: "🍗",
     image: img("photo-1563379091339-03b21ab4a4f8"),
     inStock: true,
+    stockCount: 8,
     rating: 4.7,
     tag: "Popular",
   },
@@ -58,6 +61,7 @@ export const foods: Food[] = [
     emoji: "🥞",
     image: img("photo-1668236543090-82eba5ee5976"),
     inStock: true,
+    stockCount: 20,
     rating: 4.6,
   },
   {
@@ -69,6 +73,7 @@ export const foods: Food[] = [
     emoji: "🌯",
     image: img("photo-1626700051175-6818013e1d4f"),
     inStock: true,
+    stockCount: 12,
   },
   {
     id: "f5",
@@ -79,6 +84,7 @@ export const foods: Food[] = [
     emoji: "🥪",
     image: img("photo-1539252554453-80ab65ce3586"),
     inStock: true,
+    stockCount: 25,
   },
   {
     id: "f6",
@@ -89,6 +95,7 @@ export const foods: Food[] = [
     emoji: "🥟",
     image: img("photo-1601050690597-df0568f70950"),
     inStock: false,
+    stockCount: 0,
   },
   {
     id: "f7",
@@ -99,6 +106,7 @@ export const foods: Food[] = [
     emoji: "☕",
     image: img("photo-1461023058943-07fcbe16d735"),
     inStock: true,
+    stockCount: 30,
     tag: "New",
   },
   {
@@ -110,6 +118,7 @@ export const foods: Food[] = [
     emoji: "🥤",
     image: img("photo-1437418747212-8d9709afab22"),
     inStock: true,
+    stockCount: 40,
   },
   {
     id: "f9",
@@ -120,6 +129,7 @@ export const foods: Food[] = [
     emoji: "🍫",
     image: img("photo-1606313564200-e75d5e30476c"),
     inStock: true,
+    stockCount: 10,
   },
   {
     id: "f10",
@@ -130,6 +140,7 @@ export const foods: Food[] = [
     emoji: "🍯",
     image: img("photo-1601303516534-bf9f55389acc"),
     inStock: true,
+    stockCount: 18,
   },
   {
     id: "f11",
@@ -140,6 +151,7 @@ export const foods: Food[] = [
     emoji: "🍔",
     image: img("photo-1568901346375-23c9450c58cd"),
     inStock: true,
+    stockCount: 7,
     rating: 4.4,
   },
   {
@@ -151,6 +163,7 @@ export const foods: Food[] = [
     emoji: "🍕",
     image: img("photo-1565299624946-b28f40a0ae38"),
     inStock: true,
+    stockCount: 6,
   },
   {
     id: "f13",
@@ -161,6 +174,7 @@ export const foods: Food[] = [
     emoji: "🍟",
     image: img("photo-1573080496219-bb080dd4f877"),
     inStock: true,
+    stockCount: 22,
   },
   {
     id: "f14",
@@ -171,6 +185,7 @@ export const foods: Food[] = [
     emoji: "🌯",
     image: img("photo-1626700051175-6818013e1d4f"),
     inStock: true,
+    stockCount: 9,
   },
   {
     id: "f15",
@@ -181,6 +196,7 @@ export const foods: Food[] = [
     emoji: "🧋",
     image: img("photo-1556679343-c7306c1976bc"),
     inStock: true,
+    stockCount: 35,
   },
 ];
 
@@ -197,10 +213,11 @@ export const pickupSlots = {
     "11:40 AM",
     "12:00 PM",
     "12:20 PM",
+    "12:40 PM",
+    "1:00 PM",
   ],
-  lunch: ["12:40 PM", "1:00 PM", "1:20 PM", "1:30 PM"],
+  lunch: ["1:15 PM", "1:30 PM", "1:45 PM", "2:00 PM"],
   afternoon: [
-    "2:00 PM",
     "2:20 PM",
     "2:40 PM",
     "3:00 PM",
@@ -209,6 +226,6 @@ export const pickupSlots = {
     "4:00 PM",
     "4:20 PM",
     "4:40 PM",
-    "4:50 PM",
+    "5:00 PM",
   ],
 };
