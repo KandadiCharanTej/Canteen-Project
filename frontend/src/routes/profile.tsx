@@ -23,24 +23,25 @@ function ProfilePage() {
     navigate({ to: "/" });
   };
 
-  const completed = orders.filter((o) => o.status === "Completed");
-  const totalSpent = completed.reduce((acc, curr) => acc + curr.total, 0);
+  const completed = Array.isArray(orders) ? orders.filter((o) => o?.status === "Completed") : [];
+  const totalSpent = completed.reduce((acc, curr) => acc + (curr?.total || 0), 0);
 
   const favItem = completed
-    .flatMap((o) => o.items)
+    .flatMap((o) => o?.items || [])
     .reduce(
       (acc, curr) => {
-        acc[curr.food.name] = (acc[curr.food.name] || 0) + curr.qty;
+        if (!curr?.food?.name) return acc;
+        acc[curr.food.name] = (acc[curr.food.name] || 0) + (curr.qty || 0);
         return acc;
       },
       {} as Record<string, number>,
     );
   const topItem = Object.entries(favItem).sort((a, b) => b[1] - a[1])[0]?.[0] || "None yet";
-  const initials = user.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+  const initials = (user.name || "User").split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
   return (
     <AppShell>
-      <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
         
         {/* PROFILE HEADER - PREMIUM COMPACT */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 bg-gradient-to-br from-primary via-orange-500 to-primary/80 rounded-2xl p-6 sm:p-8 shadow-md relative overflow-hidden text-white">
@@ -59,13 +60,13 @@ function ProfilePage() {
 
             <div className="space-y-1 flex-1">
                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight drop-shadow-sm">{user.name}</h1>
+                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight drop-shadow-sm">{user.name || "User"}</h1>
                  <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest border border-white/30 shadow-sm mt-1 sm:mt-0">
-                   {user.category} PRO
+                   {user.category || "Student"} PRO
                  </span>
                </div>
                <p className="text-sm text-white/90 font-medium flex items-center justify-center sm:justify-start gap-1.5 mt-1">
-                 <Mail className="h-3.5 w-3.5 opacity-70" /> {user.email}
+                 <Mail className="h-3.5 w-3.5 opacity-70" /> {user.email || "No email provided"}
                </p>
             </div>
           </div>
@@ -97,15 +98,15 @@ function ProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Full Name</label>
-                  <input name="name" defaultValue={user.name} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
+                  <input name="name" defaultValue={user.name || ""} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Email</label>
-                  <input name="email" type="email" defaultValue={user.email} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
+                  <input name="email" type="email" defaultValue={user.email || ""} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Phone Number</label>
-                  <input name="phone" defaultValue={user.phone} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
+                  <input name="phone" defaultValue={user.phone || ""} className="w-full h-10 px-3 rounded-lg border bg-background text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" required />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -129,9 +130,9 @@ function ProfilePage() {
           <div className="space-y-6">
             <h2 className="text-xl font-bold tracking-tight text-foreground">Account</h2>
             <div className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
-               <DetailRow label="Role" value={user.category} />
+               <DetailRow label="Role" value={user.category || "User"} />
                {user.department && <DetailRow label="Department" value={user.department} />}
-               <DetailRow label="Phone" value={user.phone} />
+               <DetailRow label="Phone" value={user.phone || "Not provided"} />
                <div className="pt-4 border-t mt-4">
                  <button
                    onClick={handleLogout}

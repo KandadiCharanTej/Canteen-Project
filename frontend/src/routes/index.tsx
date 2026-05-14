@@ -20,7 +20,7 @@ function HomePage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
         
         {/* PREMIUM COMPACT HERO */}
         <header className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary via-orange-500 to-primary/80 p-6 sm:p-8 shadow-md flex flex-col sm:flex-row items-center justify-between text-white text-center sm:text-left gap-6 group">

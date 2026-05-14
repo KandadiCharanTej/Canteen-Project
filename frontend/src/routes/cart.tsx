@@ -37,7 +37,7 @@ function CartPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
         <header className="flex items-center justify-between border-b pb-4">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Checkout</h1>
           {cart.length > 0 && (
