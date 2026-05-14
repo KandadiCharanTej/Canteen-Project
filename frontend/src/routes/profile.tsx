@@ -93,39 +93,39 @@ function ProfilePage() {
   return (
     <AppShell>
       <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Compact Header Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-card border rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full -mr-20 -mt-20 pointer-events-none" />
+        {/* LOUD & BEAUTIFUL HEADER */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 sm:gap-10 bg-gradient-to-br from-primary via-orange-500 to-primary/80 rounded-[2rem] p-8 sm:p-12 shadow-xl relative overflow-hidden text-white">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 blur-[100px] rounded-full -mr-40 -mt-40 pointer-events-none" />
           
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-3xl font-bold shadow-md relative">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-8 relative z-10 w-full">
+            <div className="h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-lg ring-4 ring-white/30 relative">
               {initials}
               <button
                  onClick={handleEditOpen}
-                 className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center shadow-md border-2 border-card hover:scale-105 active:scale-95 transition-all"
+                 className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-white text-primary flex items-center justify-center shadow-xl border-4 border-orange-500 hover:scale-110 active:scale-95 transition-all"
               >
-                 <Edit2 className="h-4 w-4" />
+                 <Edit2 className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{user.name}</h1>
-                 <span className="px-2 py-0.5 rounded-md bg-muted text-foreground text-[10px] font-bold uppercase tracking-widest border">
-                   {user.category}
+            <div className="space-y-2 sm:space-y-3 text-center sm:text-left flex-1">
+              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-4">
+                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none drop-shadow-sm">{user.name}</h1>
+                 <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-widest border border-white/30 shadow-sm mb-1 sm:mb-1.5">
+                   {user.category} Member
                  </span>
               </div>
-              <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                <Mail className="h-4 w-4" /> {user.email}
+              <p className="text-sm sm:text-base text-white/90 font-medium flex items-center justify-center sm:justify-start gap-2">
+                <Mail className="h-4 w-4 opacity-70" /> {user.email}
               </p>
             </div>
           </div>
 
           <button 
             onClick={handleEditOpen}
-            className="h-11 px-5 rounded-xl bg-muted border hover:bg-muted/80 flex items-center gap-2 text-sm font-bold transition-all shrink-0 z-10 w-full sm:w-auto justify-center text-foreground"
+            className="h-12 px-6 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 flex items-center gap-2 text-sm font-bold transition-all shrink-0 z-10 w-full sm:w-auto justify-center text-white shadow-lg"
           >
-            <Settings className="h-4 w-4" /> Account Settings
+            <Settings className="h-4 w-4" /> Settings
           </button>
         </div>
 
