@@ -94,29 +94,29 @@ function ProfilePage() {
     <AppShell>
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* LOUD & BEAUTIFUL HEADER */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 sm:gap-10 bg-gradient-to-br from-primary via-orange-500 to-primary/80 rounded-[2rem] p-8 sm:p-12 shadow-xl relative overflow-hidden text-white">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 blur-[100px] rounded-full -mr-40 -mt-40 pointer-events-none" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-10 bg-gradient-to-br from-primary via-orange-500 to-primary/80 rounded-[3rem] p-8 md:p-14 shadow-2xl relative overflow-hidden text-white">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 blur-[100px] rounded-full -mr-40 -mt-40 pointer-events-none" />
           
-          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-8 relative z-10 w-full">
-            <div className="h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-lg ring-4 ring-white/30 relative">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 relative z-10 w-full">
+            <div className="h-32 w-32 md:h-40 md:w-40 shrink-0 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-5xl md:text-6xl font-black shadow-xl ring-4 ring-white/30 relative">
               {initials}
               <button
                  onClick={handleEditOpen}
-                 className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-white text-primary flex items-center justify-center shadow-xl border-4 border-orange-500 hover:scale-110 active:scale-95 transition-all"
+                 className="absolute bottom-0 right-0 h-12 w-12 rounded-full bg-white text-primary flex items-center justify-center shadow-2xl border-4 border-orange-500 hover:scale-110 active:scale-95 transition-all"
               >
-                 <Edit2 className="h-5 w-5" />
+                 <Edit2 className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="space-y-2 sm:space-y-3 text-center sm:text-left flex-1">
-              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-4">
-                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none drop-shadow-sm">{user.name}</h1>
-                 <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-widest border border-white/30 shadow-sm mb-1 sm:mb-1.5">
+            <div className="space-y-3 md:space-y-4 text-center md:text-left flex-1">
+              <div className="flex flex-col md:flex-row items-center gap-3 md:gap-5">
+                 <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-none drop-shadow-sm">{user.name}</h1>
+                 <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs md:text-sm font-black uppercase tracking-widest border border-white/30 shadow-md">
                    {user.category} Member
                  </span>
               </div>
-              <p className="text-sm sm:text-base text-white/90 font-medium flex items-center justify-center sm:justify-start gap-2">
-                <Mail className="h-4 w-4 opacity-70" /> {user.email}
+              <p className="text-base md:text-xl text-white/90 font-bold flex items-center justify-center md:justify-start gap-3">
+                <Mail className="h-5 w-5 md:h-6 md:w-6 opacity-70" /> {user.email}
               </p>
             </div>
           </div>
@@ -262,15 +262,15 @@ function ProfilePage() {
 
 function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-4">
-      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+    <div className="flex items-center gap-5">
+      <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shrink-0 shadow-inner">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1.5">
+        <p className="text-sm md:text-base font-bold text-muted-foreground uppercase tracking-widest leading-none mb-2">
           {label}
         </p>
-        <p className="text-base font-bold truncate text-foreground">{value}</p>
+        <p className="text-lg md:text-2xl font-black truncate text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -278,13 +278,13 @@ function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: stri
 
 function BigStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-card border p-6 rounded-2xl flex items-center gap-5 shadow-sm">
-       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+    <div className="bg-card border p-8 rounded-3xl flex items-center gap-6 shadow-sm hover:shadow-md transition-all">
+       <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-inner">
           {icon}
        </div>
        <div>
-         <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">{label}</div>
-         <div className="text-3xl font-bold tracking-tight text-foreground">{value}</div>
+         <div className="text-sm md:text-base font-bold uppercase tracking-widest text-muted-foreground mb-2">{label}</div>
+         <div className="text-4xl md:text-5xl font-black tracking-tighter text-foreground">{value}</div>
        </div>
     </div>
   );
