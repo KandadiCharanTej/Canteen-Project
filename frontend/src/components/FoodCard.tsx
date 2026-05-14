@@ -38,15 +38,15 @@ export function FoodCard({ food }: { food: Food }) {
             <VegBadge veg={food.veg} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm sm:text-base font-bold truncate leading-tight">{food.name}</h3>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-medium uppercase tracking-wider">
+            <h3 className="text-base sm:text-lg font-bold leading-tight text-foreground">{food.name}</h3>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 font-semibold uppercase tracking-wider">
               {food.category}
             </p>
           </div>
         </div>
 
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-sm sm:text-base font-bold text-foreground">₹{food.price}</p>
+          <p className="text-base sm:text-lg font-bold text-foreground">₹{food.price}</p>
         </div>
 
         {/* Action Button - Bottom Right Align */}

@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
-  ShoppingBag,
+  ShoppingCart,
   History,
   User as UserIcon,
   Search,
@@ -34,7 +34,7 @@ export function AppShell({
 
   const navItems = [
     { to: "/", icon: Home, label: "Home" },
-    { to: "/cart", icon: ShoppingBag, label: "Tray", badge: count },
+    { to: "/cart", icon: ShoppingCart, label: "Cart", badge: count },
     { to: "/orders", icon: History, label: "Orders" },
     { to: "/profile", icon: UserIcon, label: "Profile" },
   ];

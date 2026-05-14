@@ -94,7 +94,7 @@ function ProfilePage() {
     <AppShell>
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Compact Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-card border rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-card border rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full -mr-20 -mt-20 pointer-events-none" />
           
           <div className="flex items-center gap-6 relative z-10">
@@ -123,7 +123,7 @@ function ProfilePage() {
 
           <button 
             onClick={handleEditOpen}
-            className="h-10 px-4 rounded-xl bg-muted border hover:bg-muted/80 flex items-center gap-2 text-xs font-bold transition-all shrink-0 z-10 w-full sm:w-auto justify-center"
+            className="h-11 px-5 rounded-xl bg-muted border hover:bg-muted/80 flex items-center gap-2 text-sm font-bold transition-all shrink-0 z-10 w-full sm:w-auto justify-center text-foreground"
           >
             <Settings className="h-4 w-4" /> Account Settings
           </button>
@@ -266,11 +266,11 @@ function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: stri
       <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
         {icon}
       </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1.5">
           {label}
         </p>
-        <p className="text-sm font-bold truncate text-foreground">{value}</p>
+        <p className="text-base font-bold truncate text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -283,8 +283,8 @@ function BigStat({ icon, label, value }: { icon: React.ReactNode; label: string;
           {icon}
        </div>
        <div>
-         <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{label}</div>
-         <div className="text-2xl font-bold tracking-tight">{value}</div>
+         <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">{label}</div>
+         <div className="text-3xl font-bold tracking-tight text-foreground">{value}</div>
        </div>
     </div>
   );
@@ -293,8 +293,8 @@ function BigStat({ icon, label, value }: { icon: React.ReactNode; label: string;
 function EditField({ label, value, icon, onChange }: { label: string; value: string; icon: React.ReactNode; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
-       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">{label}</label>
-       <div className="h-11 px-3 rounded-xl bg-background border flex items-center gap-3 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+       <label className="text-xs font-bold uppercase tracking-widest text-foreground/70 px-1">{label}</label>
+       <div className="h-12 px-4 rounded-xl bg-background border flex items-center gap-3 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
           <span className="text-muted-foreground/50">{icon}</span>
           <input
             value={value}

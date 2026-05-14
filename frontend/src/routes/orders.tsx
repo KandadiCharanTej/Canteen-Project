@@ -97,11 +97,11 @@ function OrderCard({ order, highlight }: { order: Order; highlight?: boolean }) 
           {isReady ? "✨" : "🍱"}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold">#{order.id}</span>
+          <div className="flex items-center gap-3 mb-1">
+            <span className="font-bold text-lg">#{order.id}</span>
             <StatusPill status={order.status} />
           </div>
-          <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-muted-foreground uppercase tracking-wider">
             <span>{order.items.length} Items</span>
             <span>·</span>
             <span className="text-primary">₹{order.total}</span>
@@ -138,7 +138,7 @@ function OrderCard({ order, highlight }: { order: Order; highlight?: boolean }) 
                         done ? "bg-primary border-white" : "bg-white border-muted",
                         active && "scale-125 shadow-lg shadow-primary/20"
                       )} />
-                      <span className={cn("text-[8px] font-bold uppercase tracking-tighter", done ? "text-foreground" : "text-muted-foreground")}>
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wider mt-1", done ? "text-foreground" : "text-muted-foreground/70")}>
                         {s.split(" ")[0]}
                       </span>
                     </div>
@@ -162,10 +162,10 @@ function OrderCard({ order, highlight }: { order: Order; highlight?: boolean }) 
               </div>
 
               {/* Summary */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {order.items.map((it) => (
-                  <div key={it.food.id} className="flex justify-between text-xs font-bold">
-                    <span className="text-muted-foreground"><span className="text-primary mr-2">x{it.qty}</span>{it.food.name}</span>
+                  <div key={it.food.id} className="flex justify-between text-sm font-bold text-foreground">
+                    <span className="text-foreground/80"><span className="text-primary mr-3">x{it.qty}</span>{it.food.name}</span>
                     <span>₹{it.food.price * it.qty}</span>
                   </div>
                 ))}
@@ -186,7 +186,7 @@ function StatusPill({ status }: { status: Order["status"] }) {
     Completed: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={cn("text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded", map[status])}>
+    <span className={cn("text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded", map[status])}>
       {status}
     </span>
   );

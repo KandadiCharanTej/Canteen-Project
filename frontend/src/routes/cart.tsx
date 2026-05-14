@@ -5,7 +5,7 @@ import {
   Minus,
   Plus,
   Trash2,
-  ShoppingBag,
+  ShoppingCart,
   Clock,
   ArrowRight,
   Info,
@@ -38,22 +38,22 @@ function CartPage() {
     <AppShell>
       <div className="space-y-6 sm:space-y-8 max-w-5xl mx-auto">
         <header className="flex items-center justify-between border-b pb-4">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Checkout</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Checkout</h1>
           {cart.length > 0 && (
-            <div className="px-3 py-1 rounded-full bg-muted text-xs font-semibold">
+            <div className="px-3 py-1.5 rounded-full bg-muted text-sm font-semibold text-foreground">
               {cart.length} items
             </div>
           )}
         </header>
 
         {!cart.length ? (
-          <div className="py-20 flex flex-col items-center text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-              <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+          <div className="py-24 flex flex-col items-center text-center space-y-5">
+            <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+              <ShoppingCart className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="space-y-1">
-              <h2 className="text-lg font-bold">Your tray is empty</h2>
-              <p className="text-sm text-muted-foreground">Add items from the menu to start a new order.</p>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-foreground">Your cart is empty</h2>
+              <p className="text-base text-muted-foreground">Add items from the menu to start a new order.</p>
             </div>
             <Link
               to="/"
@@ -89,11 +89,11 @@ function CartPage() {
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <VegBadge veg={it.food.veg} />
-                                <h3 className="font-bold text-sm sm:text-base leading-tight">{it.food.name}</h3>
+                                <h3 className="font-bold text-base sm:text-lg leading-tight text-foreground">{it.food.name}</h3>
                               </div>
-                              <p className="text-xs text-muted-foreground font-medium mt-0.5">₹{it.food.price}</p>
+                              <p className="text-sm text-muted-foreground font-semibold mt-1">₹{it.food.price}</p>
                             </div>
-                            <p className="text-sm font-bold">₹{it.food.price * it.qty}</p>
+                            <p className="text-base font-bold text-foreground">₹{it.food.price * it.qty}</p>
                           </div>
 
                           <div className="mt-auto flex items-center gap-3">
@@ -126,15 +126,15 @@ function CartPage() {
                 </div>
               </div>
 
-              <div className="bg-card border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                   <Info className="h-4 w-4" /> Cooking Instructions
+              <div className="bg-card border rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground/80">
+                   <Info className="h-5 w-5" /> Cooking Instructions
                 </div>
                 <textarea
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
                   placeholder="e.g. Less spicy, no onions..."
-                  className="w-full bg-muted/50 border rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-primary/40 transition-all resize-none h-20"
+                  className="w-full bg-muted/50 border rounded-xl p-4 text-base outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none h-24"
                 />
               </div>
             </div>
@@ -142,15 +142,15 @@ function CartPage() {
             {/* Right Col: Summary */}
             <div className="lg:col-span-5 xl:col-span-4 space-y-6">
               <div className="bg-card border rounded-2xl p-5 space-y-6 shadow-sm lg:sticky lg:top-24">
-                <div className="space-y-4">
+                <div className="space-y-5">
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-foreground font-bold">
-                         <Clock className="h-4 w-4 text-primary" />
-                         <span className="text-sm">Pickup Time</span>
+                         <Clock className="h-5 w-5 text-primary" />
+                         <span className="text-base">Pickup Time</span>
                       </div>
-                      <span className="text-sm font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-md">{pickup}</span>
+                      <span className="text-sm font-bold bg-primary/10 text-primary px-3 py-1 rounded-md">{pickup}</span>
                    </div>
-                   <div className="space-y-3">
+                   <div className="space-y-4">
                      <SlotGroup slots={pickupSlots.lunch.slice(0, 4)} pickup={pickup} setPickup={setPickup} />
                      <SlotGroup slots={[...pickupSlots.morning, ...pickupSlots.afternoon].slice(0, 4)} pickup={pickup} setPickup={setPickup} />
                    </div>
