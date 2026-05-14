@@ -200,31 +200,26 @@ export const foods: Food[] = [
   },
 ];
 
+function generateSlots(startHour: number, startMin: number, endHour: number, endMin: number) {
+  const slots: string[] = [];
+  let h = startHour;
+  let m = startMin;
+  while (h < endHour || (h === endHour && m <= endMin)) {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    const displayM = m.toString().padStart(2, '0');
+    slots.push(`${displayH}:${displayM} ${ampm}`);
+    m += 5;
+    if (m >= 60) {
+      m -= 60;
+      h += 1;
+    }
+  }
+  return slots;
+}
+
 export const pickupSlots = {
-  morning: [
-    "9:00 AM",
-    "9:20 AM",
-    "9:40 AM",
-    "10:00 AM",
-    "10:20 AM",
-    "10:40 AM",
-    "11:00 AM",
-    "11:20 AM",
-    "11:40 AM",
-    "12:00 PM",
-    "12:10 PM",
-  ],
-  lunch: ["12:30 PM", "12:50 PM", "1:10 PM", "1:30 PM"],
-  afternoon: [
-    "1:50 PM",
-    "2:10 PM",
-    "2:30 PM",
-    "2:50 PM",
-    "3:10 PM",
-    "3:30 PM",
-    "3:50 PM",
-    "4:10 PM",
-    "4:30 PM",
-    "4:50 PM",
-  ],
+  morning: generateSlots(9, 0, 12, 25),
+  lunch: generateSlots(12, 30, 13, 30),
+  afternoon: generateSlots(13, 35, 16, 50),
 };

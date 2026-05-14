@@ -23,7 +23,7 @@ export const Route = createFileRoute("/cart")({
 function CartPage() {
   const { cart, setQty, remove, total, user } = useStore();
   const navigate = useNavigate();
-  const [pickup, setPickup] = useState("12:50 PM");
+  const [pickup, setPickup] = useState(pickupSlots.lunch[0] ?? "12:30 PM");
   const [instructions, setInstructions] = useState("");
 
   const fee = cart.length ? 5 : 0;
@@ -37,89 +37,89 @@ function CartPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 md:space-y-12 max-w-6xl mx-auto">
-        <header className="flex items-center justify-between border-b border-border/50 pb-6">
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">Checkout</h1>
+      <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+        <header className="flex items-center justify-between border-b pb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Checkout</h1>
           {cart.length > 0 && (
-            <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold uppercase tracking-widest shadow-sm">
+            <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest shadow-sm">
               {cart.length} items
             </div>
           )}
         </header>
 
         {!cart.length ? (
-          <div className="py-32 flex flex-col items-center text-center space-y-6 bg-card border border-border/50 rounded-[3rem] shadow-sm">
-            <div className="h-28 w-28 rounded-full bg-muted flex items-center justify-center shadow-inner">
-              <ShoppingCart className="h-12 w-12 text-muted-foreground/50" />
+          <div className="py-20 flex flex-col items-center text-center space-y-5 bg-card border rounded-2xl shadow-sm">
+            <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+              <ShoppingCart className="h-8 w-8 text-muted-foreground/60" />
             </div>
-            <div className="space-y-3">
-              <h2 className="text-2xl font-black text-foreground">Your cart is empty</h2>
-              <p className="text-lg text-muted-foreground font-medium max-w-sm">Looks like you haven't added anything to your cart yet.</p>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-foreground">Your cart is empty</h2>
+              <p className="text-sm text-muted-foreground font-medium max-w-xs mx-auto">Looks like you haven't added anything to your cart yet.</p>
             </div>
             <Link
               to="/"
-              className="mt-6 h-14 px-8 rounded-2xl bg-primary text-white text-base font-bold shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+              className="mt-4 h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-2"
             >
-              Browse Menu <ArrowRight className="h-5 w-5" />
+              Browse Menu <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* Left Col: Items & Instructions */}
-            <div className="lg:col-span-7 xl:col-span-8 space-y-8">
-              <div className="bg-card border border-border/50 rounded-[2rem] p-6 md:p-8 shadow-md">
-                <h2 className="text-xl font-bold border-b border-border/50 pb-4 mb-6 flex items-center gap-3">
-                  <ShoppingCart className="h-6 w-6 text-primary" /> Order Items
+            <div className="lg:col-span-7 space-y-6">
+              <div className="bg-card border rounded-2xl p-5 shadow-sm">
+                <h2 className="text-base font-bold border-b pb-3 mb-4 flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-primary" /> Order Items
                 </h2>
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <AnimatePresence initial={false}>
                     {cart.map((it) => (
                       <motion.div
                         key={it.food.id}
                         layout
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="flex gap-5 md:gap-6 group"
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        className="flex gap-4 group"
                       >
                         <img
                           src={it.food.image}
                           alt={it.food.name}
-                          className="h-24 w-24 md:h-28 md:w-28 rounded-2xl object-cover shrink-0 bg-muted shadow-sm"
+                          className="h-20 w-20 rounded-xl object-cover shrink-0 bg-muted border"
                         />
                         <div className="flex-1 min-w-0 flex flex-col">
-                          <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start justify-between gap-3">
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 mb-0.5">
                                 <VegBadge veg={it.food.veg} />
-                                <h3 className="font-bold text-lg md:text-xl leading-tight text-foreground truncate">{it.food.name}</h3>
+                                <h3 className="font-bold text-base leading-tight text-foreground truncate">{it.food.name}</h3>
                               </div>
-                              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{it.food.category}</p>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{it.food.category}</p>
                             </div>
-                            <p className="text-xl font-black text-foreground shrink-0">₹{it.food.price * it.qty}</p>
+                            <p className="text-base font-bold text-foreground shrink-0">₹{it.food.price * it.qty}</p>
                           </div>
 
-                          <div className="mt-auto flex items-center justify-between pt-4">
-                            <div className="flex items-center bg-muted rounded-xl h-10 p-1 border shadow-sm">
+                          <div className="mt-auto flex items-center justify-between pt-3">
+                            <div className="flex items-center bg-muted rounded-lg h-8 p-1 border">
                               <button
                                 onClick={() => setQty(it.food.id, it.qty - 1)}
-                                className="h-8 w-8 flex items-center justify-center hover:bg-background rounded-lg transition-all text-foreground"
+                                className="h-6 w-6 flex items-center justify-center hover:bg-background rounded-md transition-all text-foreground"
                               >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-3 w-3" />
                               </button>
-                              <span className="w-10 text-center text-sm font-bold tabular-nums">{it.qty}</span>
+                              <span className="w-8 text-center text-xs font-bold tabular-nums">{it.qty}</span>
                               <button
                                 onClick={() => setQty(it.food.id, it.qty + 1)}
-                                className="h-8 w-8 flex items-center justify-center hover:bg-background rounded-lg transition-all text-foreground"
+                                className="h-6 w-6 flex items-center justify-center hover:bg-background rounded-md transition-all text-foreground"
                               >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-3 w-3" />
                               </button>
                             </div>
                             <button
                               onClick={() => remove(it.food.id)}
-                              className="h-10 px-4 flex items-center gap-2 text-sm font-bold text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                              className="h-8 px-3 flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
                             >
-                              <Trash2 className="h-4 w-4" /> <span className="hidden md:inline">Remove</span>
+                              <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Remove</span>
                             </button>
                           </div>
                         </div>
@@ -129,61 +129,70 @@ function CartPage() {
                 </div>
               </div>
 
-              <div className="bg-card border border-border/50 rounded-[2rem] p-6 md:p-8 shadow-md">
-                <div className="flex items-center gap-3 text-lg font-bold text-foreground mb-4">
-                   <Info className="h-6 w-6 text-primary" /> Cooking Instructions
+              <div className="bg-card border rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-base font-bold text-foreground mb-3">
+                   <Info className="h-4 w-4 text-primary" /> Cooking Instructions
                 </div>
                 <textarea
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
                   placeholder="e.g. Less spicy, no onions..."
-                  className="w-full bg-muted/30 border-2 rounded-[1.5rem] p-6 text-lg outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all resize-none h-32"
+                  className="w-full bg-muted/50 border rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-24"
                 />
               </div>
             </div>
 
             {/* Right Col: Summary */}
-            <div className="lg:col-span-5 xl:col-span-4 space-y-8">
-              <div className="bg-card border border-border/50 rounded-[2.5rem] p-6 md:p-8 shadow-xl lg:sticky lg:top-32 flex flex-col gap-8">
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-card border rounded-2xl p-5 shadow-sm lg:sticky lg:top-24 space-y-6">
                 
                 {/* Pickup Time */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 text-foreground font-bold">
-                         <Clock className="h-6 w-6 text-primary" />
-                         <span className="text-xl">Pickup Time</span>
+                      <div className="flex items-center gap-2 text-foreground font-bold">
+                         <Clock className="h-4 w-4 text-primary" />
+                         <span className="text-base">Pickup Time</span>
                       </div>
-                      <span className="text-sm font-black bg-primary text-white px-4 py-1.5 rounded-full shadow-md">{pickup}</span>
+                      <span className="text-xs font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">{pickup}</span>
                    </div>
-                   <div className="bg-muted/30 p-5 rounded-2xl border space-y-4">
-                     <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Select Slot</p>
-                     <div className="flex flex-wrap gap-2">
-                       <SlotGroup slots={pickupSlots.lunch.slice(0, 4)} pickup={pickup} setPickup={setPickup} />
-                       <SlotGroup slots={pickupSlots.afternoon.slice(0, 4)} pickup={pickup} setPickup={setPickup} />
+                   
+                   <div className="bg-muted/30 p-4 rounded-xl border space-y-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <span className="h-px flex-1 bg-border" /> Lunch Break <span className="h-px flex-1 bg-border" />
+                     </p>
+                     <div className="flex flex-wrap gap-2 justify-center">
+                       <SlotGroup slots={pickupSlots.lunch} pickup={pickup} setPickup={setPickup} highlight={true} />
+                     </div>
+
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 pt-2">
+                        <span className="h-px flex-1 bg-border" /> Regular Slots <span className="h-px flex-1 bg-border" />
+                     </p>
+                     <div className="flex flex-wrap gap-2 justify-center">
+                       <SlotGroup slots={[...pickupSlots.morning, ...pickupSlots.afternoon]} pickup={pickup} setPickup={setPickup} />
                      </div>
                    </div>
                 </div>
 
                 {/* Bill */}
-                <div className="space-y-5">
-                   <h2 className="text-lg font-bold flex items-center gap-3 border-b border-border/50 pb-4">
-                     <Receipt className="h-5 w-5 text-primary" /> Bill Details
+                <div className="space-y-4">
+                   <h2 className="text-base font-bold flex items-center gap-2 border-b pb-3">
+                     <Receipt className="h-4 w-4 text-primary" /> Bill Details
                    </h2>
-                   <div className="space-y-3">
+                   <div className="space-y-2.5">
                       <BillRow label="Item Total" value={`₹${total}`} />
                       <BillRow label="Platform Fee" value={`₹${fee}`} />
                    </div>
-                   <div className="pt-5 border-t-2 border-dashed flex justify-between items-center">
-                      <p className="text-xl font-bold text-foreground">To Pay</p>
-                      <p className="text-3xl font-black text-foreground">₹{grand}</p>
+                   <div className="pt-4 border-t flex justify-between items-center">
+                      <p className="text-base font-bold text-foreground">To Pay</p>
+                      <p className="text-2xl font-bold text-foreground">₹{grand}</p>
                    </div>
                 </div>
 
                 <button
                   onClick={checkout}
-                  className="w-full h-16 rounded-2xl bg-gradient-to-r from-primary to-orange-500 text-white font-black text-lg shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                  className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  Proceed to Pay <ArrowRight className="h-6 w-6" />
+                  Proceed to Pay <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -196,14 +205,14 @@ function CartPage() {
 
 function BillRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center text-base">
-      <span className="text-muted-foreground font-semibold">{label}</span>
-      <span className="font-bold text-foreground">{value}</span>
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-muted-foreground font-medium">{label}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
-function SlotGroup({ slots, pickup, setPickup }: { slots: string[]; pickup: string; setPickup: (s: string) => void }) {
+function SlotGroup({ slots, pickup, setPickup, highlight }: { slots: string[]; pickup: string; setPickup: (s: string) => void, highlight?: boolean }) {
   return (
     <>
       {slots.map((s) => (
@@ -211,10 +220,12 @@ function SlotGroup({ slots, pickup, setPickup }: { slots: string[]; pickup: stri
           key={s}
           onClick={() => setPickup(s)}
           className={cn(
-            "h-10 px-4 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 shrink-0",
+            "h-8 px-3 rounded-lg text-[11px] font-bold border transition-all active:scale-95 shrink-0",
             pickup === s
-              ? "bg-primary text-white border-primary shadow-md"
-              : "bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              ? "bg-primary text-white border-primary shadow-sm"
+              : highlight 
+                ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" 
+                : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
           )}
         >
           {s}
