@@ -21,17 +21,17 @@ function HomePage() {
     <AppShell>
       <div className="space-y-8 sm:space-y-12">
         {/* COMPACT STARTUP HERO */}
-        <header className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-background border border-primary/10 p-6 sm:p-10 text-center sm:text-left flex items-center justify-between">
-          <div className="space-y-2 relative z-10">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Campus dining, <span className="text-primary">simplified.</span>
+        <header className="relative rounded-3xl overflow-hidden bg-primary text-primary-foreground p-6 sm:p-8 text-center sm:text-left flex items-center justify-between shadow-md">
+          <div className="space-y-1.5 relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Campus dining, simplified.
             </h1>
-            <p className="text-sm text-muted-foreground font-medium max-w-md">
+            <p className="text-sm text-primary-foreground/90 font-medium max-w-md mx-auto sm:mx-0">
               Order your favorite meals ahead of time and skip the queue.
             </p>
           </div>
-          <div className="hidden sm:block text-6xl opacity-10 blur-[2px] absolute right-10 top-1/2 -translate-y-1/2 select-none">
-            🍱
+          <div className="hidden sm:block text-6xl opacity-20 absolute right-10 top-1/2 -translate-y-1/2 select-none">
+            ✨
           </div>
         </header>
 

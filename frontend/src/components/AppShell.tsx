@@ -132,7 +132,7 @@ export function AppShell({
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 min-h-screen relative">
+      <main className="flex-1 min-h-screen relative pb-20 xl:pb-0">
         {showSearch && (
           <div className="hidden xl:flex sticky top-0 z-30 px-8 py-4 bg-background/80 backdrop-blur-md border-b">
             <div className="w-full max-w-3xl mx-auto">
@@ -156,7 +156,7 @@ export function AppShell({
       </main>
 
       {/* MOBILE BOTTOM NAV */}
-      <nav className="xl:hidden fixed bottom-4 left-4 right-4 h-16 bg-card/90 backdrop-blur-xl border rounded-2xl flex items-center justify-around px-2 z-40 shadow-xl">
+      <nav className="xl:hidden fixed bottom-0 left-0 right-0 h-16 bg-card border-t flex items-center justify-around px-2 z-40">
         {navItems.map((it) => {
           const active = location.pathname === it.to;
           return (
